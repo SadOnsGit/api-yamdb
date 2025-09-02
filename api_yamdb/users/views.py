@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from rest_framework.filters import SearchFilter
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import CreateAPIView
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, AdminUserSerializer
 
 User = get_user_model()
 
@@ -18,15 +19,17 @@ class UserViewSet(ModelViewSet):
     Поиск по username, эндпоинт /me/ для текущего пользователя.
     """
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = AdminUserSerializer
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
+
 
     def get_permissions(self):
         if self.action == 'me':
             return [IsAuthenticated()]
         return [IsAdminUser()]
+
 
     @action(detail=False, methods=['get', 'patch'], url_path='me')
     def user(self, request):
@@ -47,3 +50,8 @@ class UserViewSet(ModelViewSet):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class SignupView(CreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = []

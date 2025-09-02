@@ -26,5 +26,12 @@ class CustomUser(AbstractUser):
     )
     email = models.EmailField(
         unique=True,
-        verbose_name='E-mail'
+        verbose_name='E-mail',
+        help_text=
+        (
+            "Обязательное поле. Введите верный email адрес, его нужно будет подтвердить."
+        ),
+        error_messages={
+            "unique": ("Такой email адрес уже зарегистрирован в системе. Пожалуйста, войдите в аккаунт"),
+        },
     )
