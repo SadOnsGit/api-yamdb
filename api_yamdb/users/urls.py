@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.routers import DefaultRouter
 
-from .views import UserViewSet, SignupView
+from .views import SignupView, UserViewSet
 
 v1_user_router = DefaultRouter()
 v1_user_router.register('users', UserViewSet)

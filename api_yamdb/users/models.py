@@ -29,9 +29,36 @@ class CustomUser(AbstractUser):
         verbose_name='E-mail',
         help_text=
         (
-            "Обязательное поле. Введите верный email адрес, его нужно будет подтвердить."
+            "Обязательное поле. Введите верный email адрес, мы отправим код на него."
         ),
         error_messages={
             "unique": ("Такой email адрес уже зарегистрирован в системе. Пожалуйста, войдите в аккаунт"),
         },
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(username__iexact='me'),
+                name='username_not_me',
+                violation_error_message="Username 'me' is not allowed."
+            )
+        ]
+
+
+class OtpCode(models.Model):
+    email = models.EmailField(
+        verbose_name='E-mail',
+        unique=True
+    )
+    code = models.CharField(
+        max_length=6,
+        verbose_name='Единоразовый код'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    expired = models.DateTimeField(
+        'Дата истечения кода'
     )
