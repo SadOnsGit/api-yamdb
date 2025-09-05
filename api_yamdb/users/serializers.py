@@ -16,6 +16,14 @@ class AdminUserSerializer(ModelSerializer):
     Сериализатор для админов с выбором роли
     """
 
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError(
+                'Недопустимое имя пользователя!'
+            )
+        return value
+
+
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -28,16 +36,16 @@ class UserSerializer(ModelSerializer):
     Сериализатор для регистрации пользователей
     """
 
-    class Meta:
-        fields = ('email', 'username')
-        model = User
-
     def validate_username(self, value):
         if value == 'me':
             raise serializers.ValidationError(
                 'Недопустимое имя пользователя!'
             )
         return value
+
+    class Meta:
+        fields = ('email', 'username')
+        model = User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

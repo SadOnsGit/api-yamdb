@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import CreateAPIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import exceptions
 
 from .serializers import UserSerializer, AdminUserSerializer
 from .utils import send_otp_code
@@ -19,9 +20,12 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
     pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
+        if self.action == 'me':
+            return AdminUserSerializer
         if self.request.user.role == 'admin' or self.request.user.is_superuser:
             return AdminUserSerializer
         return UserSerializer
@@ -33,16 +37,18 @@ class UserViewSet(ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get', 'patch'],
+        methods=['get', 'patch', 'put'],
         url_path='me',
         url_name='me'
     )
     def me(self, request, *args, **kwargs):
-        if request.method == 'PATCH':
+        if request.method in ['PATCH', 'PUT']:
+            if 'role' in request.data:
+                raise exceptions.PermissionDenied("Изменение поля 'role' через этот эндпоинт запрещено.")
             serializer = self.get_serializer(
                 request.user,
                 data=request.data,
-                partial=True
+                partial=(request.method == 'PATCH')
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
