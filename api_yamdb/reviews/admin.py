@@ -1,5 +1,5 @@
 from django.contrib import admin
-from reviews.models import Genre, Title
+from reviews.models import Genre, Title, Category
 
 
 @admin.register(Title)
@@ -24,6 +24,20 @@ class TitleAdmin(admin.ModelAdmin):
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk', 'name', 'slug'
+    )
+    list_editable = (
+        'slug',
+    )
+    list_display_links = (
+        'pk',
+    )
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         'pk', 'name', 'slug'
     )
