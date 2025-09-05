@@ -6,6 +6,7 @@
 3. Comment.author_id: int вместо FK на User
 Позже, когда появятся модели User и Title, int-поля будут изменены.
 """
+from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -17,15 +18,18 @@ class Review(models.Model):
     Оценка — целое число в диапазоне от 1 до 10.
     """
 
-    # Заглушка
-    title_id = models.IntegerField(
-        verbose_name='ID произведения',
-        help_text='Временное поле: ID Title'
+    title = models.ForeignKey(
+        'Title',
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Произведение',
+        help_text='Связь с произведением (Title).'
     )
-    # Заглушка
-    author_id = models.IntegerField(
-        verbose_name='ID пользователя',
-        help_text='Временное поле: ID User'
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор',
     )
     text = models.TextField(
         verbose_name='Текст отзыва',
@@ -66,10 +70,11 @@ class Comment(models.Model):
         related_name='comments',
         verbose_name='Отзыв'
     )
-    # Заглушка
-    author_id = models.IntegerField(
-        verbose_name='ID пользователя',
-        help_text='Временное поле: ID User'
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор',
     )
     text = models.TextField(
         verbose_name='Текст комментария',
