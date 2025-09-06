@@ -74,7 +74,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='reviews',
+        related_name='comments',
         verbose_name='Автор',
     )
     text = models.TextField(
