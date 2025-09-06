@@ -22,6 +22,7 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
     pagination_class = PageNumberPagination
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action == 'me':
@@ -43,8 +44,8 @@ class UserViewSet(ModelViewSet):
     )
     def me(self, request, *args, **kwargs):
         if request.method in ['PATCH', 'PUT']:
-            if 'role' in request.data:
-                raise exceptions.PermissionDenied("Изменение поля 'role' через этот эндпоинт запрещено.")
+            if 'role' in request.data and request.user.role != 'admin':
+                request.data['role'] = request.user.role
             serializer = self.get_serializer(
                 request.user,
                 data=request.data,
