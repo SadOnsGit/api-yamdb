@@ -11,11 +11,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    class Meta:
-        model = Review
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
-
     def validate(self, attrs):
         """Один отзыв на произведение от одного пользователя."""
         request = self.context.get('request')
@@ -37,6 +32,11 @@ class ReviewSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('id', 'author', 'pub_date')
+
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор комментариев к отзывам."""
@@ -46,11 +46,6 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    class Meta:
-        model = Comment
-        fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
-
     def create(self, validated_data):
         request = self.context['request']
         view = self.context['view']
@@ -59,3 +54,8 @@ class CommentSerializer(serializers.ModelSerializer):
             review_id=view.kwargs['review_id'],
             **validated_data
         )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('id', 'author', 'pub_date')
