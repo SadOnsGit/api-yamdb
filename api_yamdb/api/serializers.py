@@ -76,16 +76,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Вы уже писали отзыв!')
         return attrs
 
-    def create(self, validated_data):
-        """Автор и произведение подставляются из контекста запроса и URL"""
-        request = self.context['request']
-        view = self.context['view']
-        return Review.objects.create(
-            author=request.user,
-            title_id=view.kwargs['title_id'],
-            **validated_data
-        )
-
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
@@ -100,17 +90,7 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    def create(self, validated_data):
-        request = self.context['request']
-        view = self.context['view']
-        return Comment.objects.create(
-            author=request.user,
-            review_id=view.kwargs['review_id'],
-            **validated_data
-        )
-
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
         read_only_fields = ('id', 'author', 'pub_date')
- 

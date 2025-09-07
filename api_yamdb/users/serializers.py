@@ -66,7 +66,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if user:
             code_obj = get_object_or_404(OtpCode, email=user.email, expired__gt=timezone.now())
             if code_obj.code != confirmation_code:
-                raise exceptions.AuthenticationFailed('Неверный код подтверждения.')
+                raise serializers.ValidationError('Неверный код подтверждения.')
             self.user = user
             refresh = self.get_token(self.user)
             data = {

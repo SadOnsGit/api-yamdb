@@ -7,9 +7,10 @@ class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
             or request.user.is_moderator
             or request.user.is_admin
             or obj.author == request.user
+        )
 
 
-class IsAuthorAdminOrReadOnly(permissions.BasePermission):
+class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
 
     @staticmethod
     def _is_safe(request):

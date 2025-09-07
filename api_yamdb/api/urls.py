@@ -19,9 +19,9 @@ router.register(
     CommentViewSet, basename='comments'
 )
 router.register(r'users', UserViewSet, basename='users')
-router.register(r'^categories', CategoryViewSet, basename='categories'),
-router.register(r'^genres', GenreViewSet, basename='genres'),
-router.register(r'^titles', TitleViewSet, basename='titles'),
+router.register(r'categories', CategoryViewSet, basename='categories'),
+router.register(r'genres', GenreViewSet, basename='genres'),
+router.register(r'titles', TitleViewSet, basename='titles'),
 
 urlpatterns = [
     path('v1/auth/', include('users.urls')),

@@ -8,7 +8,7 @@ v1_user_router = DefaultRouter()
 v1_user_router.register('users', UserViewSet)
 
 urlpatterns = [
-    path('auth/signup/', SignupView.as_view()),
-    path('auth/token/', TokenObtainPairView.as_view()),
+    path('signup/', SignupView.as_view()),
+    path('token/', TokenObtainPairView.as_view()),
     path('', include(v1_user_router.urls))
 ]

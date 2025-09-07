@@ -20,6 +20,7 @@ class CustomUser(AbstractUser):
         verbose_name='Биография'
     )
     role = models.CharField(
+        max_length=128,
         default='user',
         choices=ROLE_CHOICES,
         verbose_name='Роль'

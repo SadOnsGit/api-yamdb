@@ -54,6 +54,10 @@ class UserViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+        if request.method == 'DELETE':
+            return Response(
+                {'detail': 'Method "DELETE" not allowed.'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
