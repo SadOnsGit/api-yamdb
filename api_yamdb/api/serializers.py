@@ -1,0 +1,61 @@
+from rest_framework import serializers
+
+from reviews.models import Review, Comment
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор отзывов."""
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+    )
+
+    def validate(self, attrs):
+        """Один отзыв на произведение от одного пользователя."""
+        request = self.context.get('request')
+        view = self.context.get('view')
+        if request and view and request.method == 'POST':
+            title_id = view.kwargs.get('title_id')
+            user = request.user
+            if Review.objects.filter(title_id=title_id, author=user).exists():
+                raise serializers.ValidationError('Вы уже писали отзыв!')
+        return attrs
+
+    def create(self, validated_data):
+        """Автор и произведение подставляются из контекста запроса и URL"""
+        request = self.context['request']
+        view = self.context['view']
+        return Review.objects.create(
+            author=request.user,
+            title_id=view.kwargs['title_id'],
+            **validated_data
+        )
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('id', 'author', 'pub_date')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор комментариев к отзывам."""
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+    )
+
+    def create(self, validated_data):
+        request = self.context['request']
+        view = self.context['view']
+        return Comment.objects.create(
+            author=request.user,
+            review_id=view.kwargs['review_id'],
+            **validated_data
+        )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('id', 'author', 'pub_date')
