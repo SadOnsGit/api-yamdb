@@ -24,6 +24,6 @@ router.register(r'genres', GenreViewSet, basename='genres'),
 router.register(r'titles', TitleViewSet, basename='titles'),
 
 urlpatterns = [
-    path('v1/auth/', include('users.urls')),
     path('v1/', include(router.urls)),
+    path('v1/auth/', include('users.urls')),
 ]

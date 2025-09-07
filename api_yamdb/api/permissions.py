@@ -5,7 +5,12 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+        user = request.user
+        return bool(
+            user and user.is_authenticated and (
+                getattr(user, 'is_admin', False) or getattr(user, 'is_superuser', False)
+            )
+        )
 
 
 class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
@@ -24,6 +29,8 @@ class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
             return True
         user = request.user
         return (
-            getattr(obj, "author", None) == user
-            or getattr(user, "is_admin", False)
+            getattr(obj, 'author', None) == user
+            or getattr(user, 'is_moderator', False)
+            or getattr(user, 'is_admin', False)
+            or getattr(user, 'is_superuser', False)
         )
