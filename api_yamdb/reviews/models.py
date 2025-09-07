@@ -19,14 +19,14 @@ class Title(models.Model):
         db_index=True,
     )
     name = models.CharField(
-        max_length=200,
+        max_length=256,
         db_index=True,
     )
     year = models.IntegerField(
         db_index=True
     )
     description = models.TextField(
-        max_length=200,
+        max_length=256,
         null=True,
     )
 
@@ -40,10 +40,10 @@ class Title(models.Model):
 class Category(models.Model):
     '''Модель категорий.'''
     name = models.CharField(
-        max_length=200,
+        max_length=256,
     )
     slug = models.SlugField(
-        max_length=100,
+        max_length=50,
         unique=True,
         db_index=True,
     )
@@ -57,8 +57,8 @@ class Category(models.Model):
 
 class Genre(models.Model):
     '''Модель жанров.'''
-    name = models.CharField(max_length=200,)
-    slug = models.SlugField(max_length=100, unique=True,)
+    name = models.CharField(max_length=256,)
+    slug = models.SlugField(max_length=50, unique=True,)
 
     def __str__(self) -> str:
         return self.slug[:10]
@@ -116,6 +116,12 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
         # Свежие отзывы показываются первыми
         ordering = ['-pub_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=('title', 'author'),
+                name='unique_review_per_title',
+            )
+        ]
 
     def __str__(self):
         return f'Отзыв {self.author} на {self.title} (оценка {self.score})'

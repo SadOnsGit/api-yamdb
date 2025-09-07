@@ -17,7 +17,9 @@ from .serializers import (
     ReviewSerializer,
     CommentSerializer
 )
-from .permissions import IsAuthorOrModeratorOrAdminOrReadOnly
+from .permissions import (
+    IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
+)
 
 
 class ReviewViewSet(ModelViewSet):
@@ -25,6 +27,7 @@ class ReviewViewSet(ModelViewSet):
 
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get("title_id"))
@@ -46,6 +49,7 @@ class CommentViewSet(ModelViewSet):
 
     serializer_class = CommentSerializer
     permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_review(self):
         review = get_object_or_404(Review, pk=self.kwargs.get("review_id"))
@@ -67,7 +71,7 @@ class CommentViewSet(ModelViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     '''Вьюсет произведений.'''
     pagination_class = LimitOffsetPagination
-    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -86,14 +90,14 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleWriteSerializer
         return TitleViewSerializer
 
- 
+
 class GenreViewSet(MixinViewSet):
     '''Вьюсет жанров.'''
     queryset = Genre.objects.all()
     pagination_class = LimitOffsetPagination
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
-    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
@@ -104,6 +108,6 @@ class CategoryViewSet(MixinViewSet):
     pagination_class = LimitOffsetPagination
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
-    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
