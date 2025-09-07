@@ -1,21 +1,24 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.pagination import LimitOffsetPagination
 
-
-from reviews.models import Review, Comment, Title
-from .permissions import IsAuthorOrModeratorOrAdminOrReadOnly
+from reviews.models import Genre, Category, Title, Review, Comment
 from .filters import TitleFilter
+from .mixins import MixinViewSet
 from .serializers import (
+    CategorySerializer,
+    GenreSerializer,
     TitleViewSerializer,
     TitleWriteSerializer,
     ReviewSerializer,
     CommentSerializer
 )
+from .permissions import IsAuthorOrModeratorOrAdminOrReadOnly
+
 
 class ReviewViewSet(ModelViewSet):
     """Сссылка: "/api/v1/titles/<title_id>/reviews/"."""
@@ -82,3 +85,25 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.request.method in ('POST', 'PATCH'):
             return TitleWriteSerializer
         return TitleViewSerializer
+
+ 
+class GenreViewSet(MixinViewSet):
+    '''Вьюсет жанров.'''
+    queryset = Genre.objects.all()
+    pagination_class = LimitOffsetPagination
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class CategoryViewSet(MixinViewSet):
+    '''Вьюсет категорий.'''
+    queryset = Category.objects.all()
+    pagination_class = LimitOffsetPagination
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
