@@ -46,7 +46,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_review(self):
         review = get_object_or_404(Review, pk=self.kwargs.get("review_id"))
         if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+            raise exceptions.NotFound(
+                "Отзыв не относится к указанному произведению."
+            )
         return review
 
     def get_queryset(self):
@@ -61,16 +63,22 @@ class CommentViewSet(viewsets.ModelViewSet):
         obj = get_object_or_404(queryset, pk=self.kwargs.get("pk"))
         review = obj.review
         if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+            raise exceptions.NotFound(
+                "Отзыв не относится к указанному произведению."
+            )
         return obj
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
+        serializer.save(
+            author=self.request.user, review=self.get_review()
+        )
 
     def perform_destroy(self, instance):
         review = instance.review
         if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+            raise exceptions.NotFound(
+                "Отзыв не относится к указанному произведению."
+            )
         self.check_object_permissions(self.request, instance)
         instance.delete()
 
@@ -78,7 +86,9 @@ class CommentViewSet(viewsets.ModelViewSet):
         instance = serializer.instance
         review = instance.review
         if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+            raise exceptions.NotFound(
+                "Отзыв не относится к указанному произведению."
+            )
         self.check_object_permissions(self.request, instance)
         serializer.save()
 
@@ -89,7 +99,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = [
+        'get', 'post', 'patch', 'delete', 'head', 'options'
+    ]
 
     def get_queryset(self):
         return (

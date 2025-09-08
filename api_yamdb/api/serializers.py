@@ -14,7 +14,6 @@ class CategoryField(serializers.SlugRelatedField):
         }
 
 
-
 class GenreField(serializers.SlugRelatedField):
 
     def to_representation(self, value):
@@ -61,7 +60,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     def validate_genre(self, value):
         if not value:
-            raise serializers.ValidationError('Поле genre не может быть пустым.')
+            raise serializers.ValidationError(
+                'Поле genre не может быть пустым.'
+            )
         return value
 
     def create(self, validated_data):
@@ -69,7 +70,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         category_data = validated_data.pop('category')
         year = validated_data.get('year')
         if year > timezone.now().date().year:
-            raise serializers.ValidationError('Год выпуска превышает текущий!')
+            raise serializers.ValidationError(
+                'Год выпуска превышает текущий!'
+            )
         title = Title.objects.create(**validated_data)
         title.genre.set(genres_data)
         title.category = category_data

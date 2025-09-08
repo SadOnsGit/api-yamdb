@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from rest_framework import exceptions, status
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView
@@ -80,7 +80,10 @@ class SignupView(CreateAPIView):
         else:
             email = request.data.get('email')
             username = request.data.get('username')
-            if email and User.objects.filter(email=email, username=username).exists():
+            if email and User.objects.filter(
+                email=email,
+                username=username
+            ).exists():
                 send_otp_code(email)
                 return Response(
                     serializer.data,

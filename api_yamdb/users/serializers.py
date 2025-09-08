@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import exceptions, serializers
+from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -21,7 +21,6 @@ class AdminUserSerializer(ModelSerializer):
                 'Недопустимое имя пользователя!'
             )
         return value
-
 
     class Meta:
         fields = (
@@ -63,9 +62,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         confirmation_code = attrs.get('confirmation_code')
         user = get_object_or_404(User, username=username)
         if user:
-            code_obj = get_object_or_404(OtpCode, email=user.email, expired__gt=timezone.now())
+            code_obj = get_object_or_404(
+                OtpCode,
+                email=user.email,
+                expired__gt=timezone.now()
+            )
             if code_obj.code != confirmation_code:
-                raise serializers.ValidationError('Неверный код подтверждения.')
+                raise serializers.ValidationError(
+                    'Неверный код подтверждения.'
+                )
             self.user = user
             refresh = self.get_token(self.user)
             data = {
