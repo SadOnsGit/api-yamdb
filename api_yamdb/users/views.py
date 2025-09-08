@@ -38,17 +38,18 @@ class UserViewSet(ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get', 'patch', 'put'],
+        methods=['get', 'patch', 'delete'],
         url_path='me',
         url_name='me'
     )
     def me(self, request, *args, **kwargs):
-        if request.method in ['PATCH', 'PUT']:
+        if request.method in ['PATCH']:
+            data = request.data.copy()
             if 'role' in request.data and request.user.role != 'admin':
-                request.data['role'] = request.user.role
+                data['role'] = request.user.role
             serializer = self.get_serializer(
                 request.user,
-                data=request.data,
+                data=data,
                 partial=(request.method == 'PATCH')
             )
             serializer.is_valid(raise_exception=True)
