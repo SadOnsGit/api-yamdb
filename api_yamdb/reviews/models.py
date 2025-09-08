@@ -29,6 +29,9 @@ class Title(models.Model):
         max_length=256,
         null=True,
     )
+    rating = models.IntegerField(
+        null=True
+    )
 
     class Meta:
         ordering = ('name',)

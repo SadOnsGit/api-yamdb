@@ -82,7 +82,7 @@ class TitleViewSet(viewsets.ModelViewSet):
             .select_related('category')
             .prefetch_related('genre')
             .annotate(
-                rating=Cast(Avg('reviews__score'), IntegerField())
+                avg_rating=Cast(Avg('reviews__score'), IntegerField())
             )
         )
 
