@@ -1,17 +1,16 @@
 from django.contrib.auth import get_user_model
-from rest_framework import status
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import exceptions, status
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework import exceptions
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
-from .serializers import UserSerializer, AdminUserSerializer
-from .utils import send_otp_code
 from .permissions import CustomIsAdminUser
+from .serializers import AdminUserSerializer, UserSerializer
+from .utils import send_otp_code
 
 User = get_user_model()
 

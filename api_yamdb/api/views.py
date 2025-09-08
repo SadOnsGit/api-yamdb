@@ -1,26 +1,19 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import exceptions, filters, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import exceptions
 
-from reviews.models import Genre, Category, Title, Review, Comment
+from reviews.models import Category, Comment, Genre, Review, Title
 from .filters import TitleFilter
 from .mixins import MixinViewSet
-from .serializers import (
-    CategorySerializer,
-    GenreSerializer,
-    TitleViewSerializer,
-    TitleWriteSerializer,
-    ReviewSerializer,
-    CommentSerializer
-)
-from .permissions import (
-    IsAdminOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly
-)
+from .permissions import (IsAdminOrReadOnly,
+                          IsAuthorOrModeratorOrAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer,
+                          TitleViewSerializer, TitleWriteSerializer)
 
 
 class ReviewViewSet(ModelViewSet):
@@ -66,10 +59,28 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_object(self):
         queryset = self.get_queryset()
         obj = get_object_or_404(queryset, pk=self.kwargs.get("pk"))
+        review = obj.review
+        if review.title_id != int(self.kwargs.get("title_id")):
+            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
         return obj
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
+
+    def perform_destroy(self, instance):
+        review = instance.review
+        if review.title_id != int(self.kwargs.get("title_id")):
+            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+        self.check_object_permissions(self.request, instance)
+        instance.delete()
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        review = instance.review
+        if review.title_id != int(self.kwargs.get("title_id")):
+            raise exceptions.NotFound("Отзыв не относится к указанному произведению.")
+        self.check_object_permissions(self.request, instance)
+        serializer.save()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
