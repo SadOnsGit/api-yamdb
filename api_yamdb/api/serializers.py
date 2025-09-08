@@ -1,7 +1,29 @@
 from rest_framework import serializers
+from django.utils import timezone
+from django.db.models import Avg
+
 from reviews.models import (
   Review, Comment, Category, Genre, Title
 )
+
+
+class CategoryField(serializers.SlugRelatedField):
+
+    def to_representation(self, value):
+        return {
+            "name": value.name,
+            "slug": value.slug
+        }
+
+
+
+class GenreField(serializers.SlugRelatedField):
+
+    def to_representation(self, value):
+        return {
+            "name": value.name,
+            "slug": value.slug
+        }
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -20,19 +42,41 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleWriteSerializer(serializers.ModelSerializer):
     '''Сериализатор произведений.'''
-    genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Genre.objects.all(),
+    genre = GenreField(
+        required=True,
         many=True,
-        required=False,
-    )
-
-    category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Category.objects.all(),
-        many=False,
-        required=True
+        queryset=Genre.objects.all()
     )
+    category = CategoryField(
+        required=True,
+        queryset=Category.objects.all(),
+        slug_field='slug',
+    )
+    rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return reviews.aggregate(avg_score=Avg('score'))['avg_score']
+        return None
+
+    def validate_genre(self, value):
+        if not value:
+            raise serializers.ValidationError('Поле genre не может быть пустым.')
+        return value
+
+    def create(self, validated_data):
+        genres_data = validated_data.pop('genre')
+        category_data = validated_data.pop('category')
+        year = validated_data.get('year')
+        if year > timezone.now().date().year:
+            raise serializers.ValidationError('Год выпуска превышает текущий!')
+        title = Title.objects.create(**validated_data)
+        title.genre.set(genres_data)
+        title.category = category_data
+        title.save()
+        return title
 
     class Meta:
         model = Title
@@ -43,9 +87,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
 class TitleViewSerializer(serializers.ModelSerializer):
     '''Сериализатор произведений.'''
-    genre = GenreSerializer(many=True, required=False)
-    category = CategorySerializer(required=True,)
-    rating = serializers.IntegerField(read_only=True)
+    genre = GenreSerializer(many=True, required=True)
+    category = CategorySerializer(required=True)
+    rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return reviews.aggregate(avg_score=Avg('score'))['avg_score']
+        return None
 
     class Meta:
         model = Title

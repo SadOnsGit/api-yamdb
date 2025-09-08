@@ -1,6 +1,10 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 
 class Title(models.Model):
@@ -25,12 +29,12 @@ class Title(models.Model):
     year = models.IntegerField(
         db_index=True
     )
-    description = models.TextField(
+    description = models.CharField(
         max_length=256,
-        null=True,
+        blank=True,
     )
     rating = models.IntegerField(
-        null=True
+        default=0,
     )
 
     class Meta:
@@ -100,7 +104,6 @@ class Review(models.Model):
         verbose_name='Текст отзыва',
         help_text='Введите текст отзыва'
     )
-    # Ограничивается допустимый диапазон
     score = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(1, message='Оценка не может быть меньше 1'),
@@ -143,7 +146,7 @@ class Comment(models.Model):
         verbose_name='Отзыв'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Автор',
