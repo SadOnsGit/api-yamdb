@@ -1,6 +1,9 @@
-from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
+User = get_user_model()
 
 
 class Title(models.Model):
@@ -19,15 +22,18 @@ class Title(models.Model):
         db_index=True,
     )
     name = models.CharField(
-        max_length=200,
+        max_length=256,
         db_index=True,
     )
     year = models.IntegerField(
         db_index=True
     )
-    description = models.TextField(
-        max_length=200,
-        null=True,
+    description = models.CharField(
+        max_length=256,
+        blank=True,
+    )
+    rating = models.IntegerField(
+        default=0,
     )
 
     class Meta:
@@ -40,10 +46,10 @@ class Title(models.Model):
 class Category(models.Model):
     '''Модель категорий.'''
     name = models.CharField(
-        max_length=200,
+        max_length=256,
     )
     slug = models.SlugField(
-        max_length=100,
+        max_length=50,
         unique=True,
         db_index=True,
     )
@@ -57,8 +63,8 @@ class Category(models.Model):
 
 class Genre(models.Model):
     '''Модель жанров.'''
-    name = models.CharField(max_length=200,)
-    slug = models.SlugField(max_length=100, unique=True,)
+    name = models.CharField(max_length=256,)
+    slug = models.SlugField(max_length=50, unique=True,)
 
     def __str__(self) -> str:
         return self.slug[:10]
@@ -97,7 +103,6 @@ class Review(models.Model):
         verbose_name='Текст отзыва',
         help_text='Введите текст отзыва'
     )
-    # Ограничивается допустимый диапазон
     score = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(1, message='Оценка не может быть меньше 1'),
@@ -116,6 +121,12 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
         # Свежие отзывы показываются первыми
         ordering = ['-pub_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=('title', 'author'),
+                name='unique_review_per_title',
+            )
+        ]
 
     def __str__(self):
         return f'Отзыв {self.author} на {self.title} (оценка {self.score})'
@@ -134,7 +145,7 @@ class Comment(models.Model):
         verbose_name='Отзыв'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Автор',

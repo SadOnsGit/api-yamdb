@@ -20,6 +20,7 @@ class CustomUser(AbstractUser):
         verbose_name='Биография'
     )
     role = models.CharField(
+        max_length=128,
         default='user',
         choices=ROLE_CHOICES,
         verbose_name='Роль'
@@ -27,14 +28,25 @@ class CustomUser(AbstractUser):
     email = models.EmailField(
         unique=True,
         verbose_name='E-mail',
-        help_text=
-        (
-            "Обязательное поле. Введите верный email адрес, мы отправим код на него."
+        help_text=(
+            "Обязательное поле. Введите верный email адрес, "
+            "мы отправим код на него."
         ),
         error_messages={
-            "unique": ("Такой email адрес уже зарегистрирован в системе. Пожалуйста, войдите в аккаунт"),
+            "unique": (
+                "Такой email адрес уже зарегистрирован в системе. "
+                "Пожалуйста, войдите в аккаунт"
+            ),
         },
     )
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
 
     class Meta:
         constraints = [

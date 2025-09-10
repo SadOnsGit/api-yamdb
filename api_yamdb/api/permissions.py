@@ -1,6 +1,5 @@
 from rest_framework import permissions
 
-
 class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (
@@ -8,7 +7,6 @@ class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
             or request.user.is_moderator
             or request.user.is_admin
             or obj.author == request.user
-        )
 
 
 class IsAuthorAdminOrReadOnly(permissions.BasePermission):
@@ -27,6 +25,8 @@ class IsAuthorAdminOrReadOnly(permissions.BasePermission):
             return True
         user = request.user
         return (
-            getattr(obj, "author", None) == user
-            or getattr(user, "is_admin", False)
+            getattr(obj, 'author', None) == user
+            or getattr(user, 'is_moderator', False)
+            or getattr(user, 'is_admin', False)
+            or getattr(user, 'is_superuser', False)
         )

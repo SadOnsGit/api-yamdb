@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -64,10 +63,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = get_object_or_404(User, username=username)
         if user:
             code_obj = get_object_or_404(
-                OtpCode, email=user.email, expired__gt=timezone.now()
+                OtpCode,
+                email=user.email,
+                expired__gt=timezone.now()
             )
             if code_obj.code != confirmation_code:
-                raise exceptions.AuthenticationFailed(
+                raise serializers.ValidationError(
                     'Неверный код подтверждения.'
                 )
             self.user = user

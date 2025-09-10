@@ -1,17 +1,16 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView
 from rest_framework.pagination import PageNumberPagination
-from rest_framework import exceptions
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
-from .serializers import UserSerializer, AdminUserSerializer
-from .utils import send_otp_code
 from .permissions import CustomIsAdminUser
+from .serializers import AdminUserSerializer, UserSerializer
+from .utils import send_otp_code
 
 User = get_user_model()
 
@@ -38,22 +37,27 @@ class UserViewSet(ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get', 'patch', 'put'],
+        methods=['get', 'patch', 'delete'],
         url_path='me',
         url_name='me'
     )
     def me(self, request, *args, **kwargs):
-        if request.method in ['PATCH', 'PUT']:
+        if request.method in ['PATCH']:
+            data = request.data.copy()
             if 'role' in request.data and request.user.role != 'admin':
-                request.data['role'] = request.user.role
+                data['role'] = request.user.role
             serializer = self.get_serializer(
                 request.user,
-                data=request.data,
+                data=data,
                 partial=(request.method == 'PATCH')
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+        if request.method == 'DELETE':
+            return Response(
+                {'detail': 'Method "DELETE" not allowed.'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
@@ -76,7 +80,10 @@ class SignupView(CreateAPIView):
         else:
             email = request.data.get('email')
             username = request.data.get('username')
-            if email and User.objects.filter(email=email, username=username).exists():
+            if email and User.objects.filter(
+                email=email,
+                username=username
+            ).exists():
                 send_otp_code(email)
                 return Response(
                     serializer.data,

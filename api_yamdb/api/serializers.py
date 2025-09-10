@@ -1,7 +1,26 @@
+from django.db.models import Avg
+from django.utils import timezone
 from rest_framework import serializers
-from reviews.models import (
-    Review, Comment, Category, Genre, Title
-)
+
+from reviews.models import Category, Comment, Genre, Review, Title
+
+
+class CategoryField(serializers.SlugRelatedField):
+
+    def to_representation(self, value):
+        return {
+            "name": value.name,
+            "slug": value.slug
+        }
+
+
+class GenreField(serializers.SlugRelatedField):
+
+    def to_representation(self, value):
+        return {
+            "name": value.name,
+            "slug": value.slug
+        }
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -20,31 +39,29 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleWriteSerializer(serializers.ModelSerializer):
     '''Сериализатор произведений.'''
-    genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Genre.objects.all(),
+    genre = GenreField(
+        required=True,
         many=True,
-        required=False,
-    )
-
-    category = serializers.SlugRelatedField(
         slug_field='slug',
+        queryset=Genre.objects.all()
+    )
+    category = CategoryField(
+        required=True,
         queryset=Category.objects.all(),
-        many=False,
-        required=True
+        slug_field='slug',
     )
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
 
 class TitleViewSerializer(serializers.ModelSerializer):
     '''Сериализатор произведений.'''
-    genre = GenreSerializer(many=True, required=False)
-    category = CategorySerializer(required=True,)
+    genre = GenreSerializer(many=True, required=True)
+    category = CategorySerializer(required=True)
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -76,20 +93,9 @@ class ReviewSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Вы уже писали отзыв!')
         return attrs
 
-    def create(self, validated_data):
-        """Автор и произведение подставляются из контекста запроса и URL"""
-        request = self.context['request']
-        view = self.context['view']
-        return Review.objects.create(
-            author=request.user,
-            title_id=view.kwargs['title_id'],
-            **validated_data
-        )
-
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -100,16 +106,6 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    def create(self, validated_data):
-        request = self.context['request']
-        view = self.context['view']
-        return Comment.objects.create(
-            author=request.user,
-            review_id=view.kwargs['review_id'],
-            **validated_data
-        )
-
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
