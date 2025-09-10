@@ -44,12 +44,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_review(self):
-        review = get_object_or_404(Review, pk=self.kwargs.get("review_id"))
-        if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound(
-                "Отзыв не относится к указанному произведению."
-            )
-        return review
+        return get_object_or_404(
+            Review,
+            pk=self.kwargs.get("review_id"),
+            title_id=self.kwargs.get("title_id"),
+        )
 
     def get_queryset(self):
         return (
@@ -58,39 +57,10 @@ class CommentViewSet(viewsets.ModelViewSet):
             .order_by("pub_date")
         )
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        obj = get_object_or_404(queryset, pk=self.kwargs.get("pk"))
-        review = obj.review
-        if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound(
-                "Отзыв не относится к указанному произведению."
-            )
-        return obj
-
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user, review=self.get_review()
         )
-
-    def perform_destroy(self, instance):
-        review = instance.review
-        if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound(
-                "Отзыв не относится к указанному произведению."
-            )
-        self.check_object_permissions(self.request, instance)
-        instance.delete()
-
-    def perform_update(self, serializer):
-        instance = serializer.instance
-        review = instance.review
-        if review.title_id != int(self.kwargs.get("title_id")):
-            raise exceptions.NotFound(
-                "Отзыв не относится к указанному произведению."
-            )
-        self.check_object_permissions(self.request, instance)
-        serializer.save()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -109,7 +79,7 @@ class TitleViewSet(viewsets.ModelViewSet):
             .select_related('category')
             .prefetch_related('genre')
             .annotate(
-                avg_rating=Cast(Avg('reviews__score'), IntegerField())
+                rating=Cast(Avg('reviews__score'), IntegerField())
             )
         )
 

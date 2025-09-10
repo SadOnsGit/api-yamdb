@@ -54,7 +54,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'category'
         )
 
 
@@ -62,15 +62,15 @@ class TitleViewSerializer(serializers.ModelSerializer):
     '''Сериализатор произведений.'''
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'rating', 'category'
         )
         read_only_fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'category'
         )
 
 
