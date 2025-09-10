@@ -14,8 +14,12 @@ def send_otp_code(email: str) -> None:
     """
     try:
         datetime_now = timezone.datetime.now()
-        if OtpCode.objects.filter(email=email, expired__gt=datetime_now).exists():
-            code = OtpCode.objects.filter(email=email, expired__gt=datetime_now).first().code
+        if OtpCode.objects.filter(
+            email=email, expired__gt=datetime_now
+        ).exists():
+            code = OtpCode.objects.filter(
+                email=email, expired__gt=datetime_now
+            ).first().code
         else:
             code = ''.join(random.choices(string.digits, k=6))
         send_mail(

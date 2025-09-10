@@ -23,7 +23,6 @@ class AdminUserSerializer(ModelSerializer):
             )
         return value
 
-
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -64,9 +63,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         confirmation_code = attrs.get('confirmation_code')
         user = get_object_or_404(User, username=username)
         if user:
-            code_obj = get_object_or_404(OtpCode, email=user.email, expired__gt=timezone.now())
+            code_obj = get_object_or_404(
+                OtpCode, email=user.email, expired__gt=timezone.now()
+            )
             if code_obj.code != confirmation_code:
-                raise exceptions.AuthenticationFailed('Неверный код подтверждения.')
+                raise exceptions.AuthenticationFailed(
+                    'Неверный код подтверждения.'
+                )
             self.user = user
             refresh = self.get_token(self.user)
             data = {

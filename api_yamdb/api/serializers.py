@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from reviews.models import (
-  Review, Comment, Category, Genre, Title
+    Review, Comment, Category, Genre, Title
 )
 
 
@@ -113,4 +113,3 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
         read_only_fields = ('id', 'author', 'pub_date')
- 

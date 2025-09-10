@@ -86,7 +86,7 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleWriteSerializer
         return TitleViewSerializer
 
- 
+
 class GenreViewSet(MixinViewSet):
     '''Вьюсет жанров.'''
     queryset = Genre.objects.all()
