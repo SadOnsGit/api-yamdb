@@ -1,8 +1,15 @@
-from django.db.models import Avg
-from django.utils import timezone
 from rest_framework import serializers
 
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    current_year,
+)
+
+from api_yamdb.settings import START_YEAR
 
 
 class CategoryField(serializers.SlugRelatedField):
@@ -24,28 +31,30 @@ class GenreField(serializers.SlugRelatedField):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    '''Сериализатор категорий.'''
+    """Сериализатор категорий."""
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    '''Сериализатор жанров.'''
+    """Сериализатор жанров."""
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
-    '''Сериализатор произведений.'''
-    genre = GenreField(
+    """Сериализатор произведений."""
+    genre = serializers.SlugRelatedField(
+        allow_null=False,
+        allow_empty=False,
         required=True,
         many=True,
         slug_field='slug',
         queryset=Genre.objects.all()
     )
-    category = CategoryField(
+    category = serializers.SlugRelatedField(
         required=True,
         queryset=Category.objects.all(),
         slug_field='slug',
@@ -59,10 +68,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
 
 class TitleViewSerializer(serializers.ModelSerializer):
-    '''Сериализатор произведений.'''
+    """Сериализатор произведений."""
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
-    rating = serializers.SerializerMethodField()
+
+    def validate_year(self, year):
+        """Валидация поля year."""
+        if not (START_YEAR <= year <= current_year()):
+            raise serializers.ValidationError('Год не подходит')
+        return year
 
     class Meta:
         model = Title

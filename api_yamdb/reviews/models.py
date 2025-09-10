@@ -1,32 +1,58 @@
+import datetime as dt
+
+from django.forms import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from api_yamdb.settings import START_YEAR
+
+from reviews.constans import (
+    MIN_SCORE,
+    MAX_SCORE,
+    MIN_YEAR_PUB,
+    CHAR_FIELD_MAX_LENGTH,
+    SLUG_FIELD_MAX_LENGTH,
+)
+
 User = get_user_model()
 
 
+def current_year():
+    return dt.datetime.today().year
+
+
+def validate_year(year):
+    """Валидация поля year."""
+    current_year = dt.datetime.today().year
+    if not (START_YEAR <= year <= current_year):
+        raise ValidationError('Год не подходит')
+
+
 class Title(models.Model):
-    '''Модель произведений.'''
+    """Модель произведений."""
     category = models.ForeignKey(
         'Category',
         related_name='titles',
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        db_index=True,
     )
     genre = models.ManyToManyField(
         'Genre',
-        through='TitleGenre',
         db_index=True,
     )
     name = models.CharField(
-        max_length=256,
+        max_length=CHAR_FIELD_MAX_LENGTH,
         db_index=True,
     )
-    year = models.IntegerField(
-        db_index=True
+    year = models.SmallIntegerField(
+        db_index=True,
+        validators=[MinValueValidator(
+            MIN_YEAR_PUB,
+            message=f'Год выпуска не может быть раньше {MIN_YEAR_PUB}'
+        ), validate_year],
     )
     description = models.CharField(
         max_length=256,
@@ -43,40 +69,38 @@ class Title(models.Model):
         return self.name[:10]
 
 
-class Category(models.Model):
-    '''Модель категорий.'''
+class NameSlug(models.Model):
     name = models.CharField(
-        max_length=256,
+        max_length=CHAR_FIELD_MAX_LENGTH, verbose_name='имя',
+        unique=True
     )
     slug = models.SlugField(
-        max_length=50,
-        unique=True,
-        db_index=True,
+        max_length=SLUG_FIELD_MAX_LENGTH, verbose_name='идентификатор',
+        unique=True
     )
 
     class Meta:
+        abstract = True
         ordering = ('name',)
+        verbose_name = 'имя и идентификатор'
+        verbose_name_plural = 'Имена и идентификаторы'
 
-    def __str__(self) -> str:
-        return self.slug[:10]
-
-
-class Genre(models.Model):
-    '''Модель жанров.'''
-    name = models.CharField(max_length=256,)
-    slug = models.SlugField(max_length=50, unique=True,)
-
-    def __str__(self) -> str:
-        return self.slug[:10]
+    def __str__(self):
+        return self.name
 
 
-class TitleGenre(models.Model):
-    '''Название жанра.'''
-    title = models.ForeignKey(Title, on_delete=models.CASCADE,)
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE,)
+class Category(NameSlug):
+    """Модель категорий."""
+    class Meta(NameSlug.Meta):
+        verbose_name = 'категория'
+        verbose_name_plural = 'Категории'
 
-    def __str__(self) -> str:
-        return f'{self.title},{self.genre}'
+
+class Genre(NameSlug):
+    """Модель жанров."""
+    class Meta(NameSlug.Meta):
+        verbose_name = 'жанр'
+        verbose_name_plural = 'Жанры'
 
 
 class Review(models.Model):
@@ -105,8 +129,14 @@ class Review(models.Model):
     )
     score = models.PositiveSmallIntegerField(
         validators=[
-            MinValueValidator(1, message='Оценка не может быть меньше 1'),
-            MaxValueValidator(10, message='Оценка не может быть больше 10'),
+            MinValueValidator(
+                MIN_SCORE,
+                message='Оценка не может быть меньше 1'
+            ),
+            MaxValueValidator(
+                MAX_SCORE,
+                message='Оценка не может быть больше 10'
+            ),
         ],
         verbose_name='Оценка',
         help_text='От 1 до 10'

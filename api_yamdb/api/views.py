@@ -1,5 +1,4 @@
-from django.db.models import Avg, IntegerField
-from django.db.models.functions import Cast
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import exceptions, filters, viewsets
@@ -8,12 +7,19 @@ from rest_framework.viewsets import ModelViewSet
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from .filters import TitleFilter
-from .mixins import MixinViewSet
-from .permissions import (IsAdminOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer,
-                          TitleViewSerializer, TitleWriteSerializer)
+from .mixins import ListCreateDestroyViewSet
+from .permissions import (
+    IsAdminOrReadOnly,
+    IsAuthorOrModeratorOrAdminOrReadOnly,
+)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleViewSerializer,
+    TitleWriteSerializer,
+)
 
 
 class ReviewViewSet(ModelViewSet):
@@ -94,7 +100,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    '''Вьюсет произведений.'''
+    """Вьюсет произведений."""
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -106,10 +112,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return (
             Title.objects
-            .select_related('category')
-            .prefetch_related('genre')
             .annotate(
-                avg_rating=Cast(Avg('reviews__score'), IntegerField())
+                rating=Avg('reviews__score')
             )
         )
 
@@ -119,8 +123,8 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleViewSerializer
 
 
-class GenreViewSet(MixinViewSet):
-    '''Вьюсет жанров.'''
+class GenreViewSet(ListCreateDestroyViewSet):
+    """Вьюсет жанров."""
     queryset = Genre.objects.all()
     pagination_class = LimitOffsetPagination
     serializer_class = GenreSerializer
@@ -130,8 +134,8 @@ class GenreViewSet(MixinViewSet):
     lookup_field = 'slug'
 
 
-class CategoryViewSet(MixinViewSet):
-    '''Вьюсет категорий.'''
+class CategoryViewSet(ListCreateDestroyViewSet):
+    """Вьюсет категорий."""
     queryset = Category.objects.all()
     pagination_class = LimitOffsetPagination
     serializer_class = CategorySerializer
