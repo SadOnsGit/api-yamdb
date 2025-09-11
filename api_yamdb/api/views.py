@@ -2,9 +2,15 @@ from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import get_user_model
 from rest_framework import exceptions, filters, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.filters import SearchFilter
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from .filters import TitleFilter
@@ -13,7 +19,11 @@ from .permissions import (IsAdminOrReadOnly,
                           IsAuthorOrModeratorOrAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
-                          TitleViewSerializer, TitleWriteSerializer)
+                          TitleViewSerializer, TitleWriteSerializer,
+                          UserSerializer, NewTokenObtainPairSerializer)
+from .utils import send_otp_code
+
+User = get_user_model()
 
 
 class ReviewViewSet(ModelViewSet):
@@ -27,12 +37,7 @@ class ReviewViewSet(ModelViewSet):
         return get_object_or_404(Title, pk=self.kwargs.get("title_id"))
 
     def get_queryset(self):
-        # Список отзывов конкретного произведения
-        return (
-            Review.objects.filter(title_id=self.kwargs.get("title_id"))
-            .select_related("author", "title")
-            .order_by("-pub_date")
-        )
+        return self.get_title().reviews.order_by("-pub_date")
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.get_title())
@@ -109,3 +114,80 @@ class CategoryViewSet(MixinViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    filter_backends = (SearchFilter,)
+    search_fields = ('username',)
+    lookup_field = 'username'
+    pagination_class = PageNumberPagination
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action == 'me':
+            return AdminUserSerializer
+        if self.request.user.role == 'admin' or self.request.user.is_superuser:
+            return AdminUserSerializer
+        return UserSerializer
+
+    def get_permissions(self):
+        if self.action == 'me':
+            return [IsAuthenticated()]
+        return [CustomIsAdminUser()]
+
+    @action(
+        detail=False,
+        methods=['get', 'patch', 'delete'],
+        url_path='me',
+        url_name='me'
+    )
+    def me(self, request, *args, **kwargs):
+        if request.method in ['PATCH']:
+            data = request.data.copy()
+            if 'role' in request.data and request.user.role != 'admin':
+                data['role'] = request.user.role
+            serializer = self.get_serializer(
+                request.user,
+                data=data,
+                partial=(request.method == 'PATCH')
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        if request.method == 'DELETE':
+            return Response(
+                {'detail': 'Method "DELETE" not allowed.'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+
+class SignupView(CreateAPIView):
+    """
+    Представление для регистрации пользователей.
+    Доступно всем.
+    Отправление OTP кода если пользователь существует.
+    """
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            send_otp_code(user.email)
+            return Response(serializer.data, status=200)
+        else:
+            email = request.data.get('email')
+            username = request.data.get('username')
+            if email and User.objects.filter(
+                email=email,
+                username=username
+            ).exists():
+                send_otp_code(email)
+                return Response(
+                    serializer.data,
+                    status=200
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
