@@ -1,10 +1,15 @@
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.db import IntegrityError
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from users.validators import validate_username
 
 from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import OtpCode
+from .utils import send_otp_code
 
 User = get_user_model()
 
@@ -131,47 +136,99 @@ class UserSerializer(serializers.Serializer):
     """
     Сериализатор для регистрации пользователей
     """
-
-    def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError(
-                'Недопустимое имя пользователя!'
-            )
-        return value
+    username = serializers.CharField(
+        required=True,
+        max_length=150,
+        validators=[validate_username]
+    )
+    email = serializers.CharField(
+        required=True,
+        max_length=254,
+    )
+    first_name = serializers.CharField(
+        max_length=150,
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+    )
+    bio = serializers.CharField()
+    role = serializers.CharField()
 
     class Meta:
-        fields = ('email', 'username')
         model = User
+        fields = ('username', 'email')
+
+    def create(self, validated_data):
+        try:
+            username = validated_data.get('username')
+            email = validated_data.get('email')
+            user = User(username=username, email=email)
+            user, created = User.objects.get_or_create(
+                username=username,
+                email=email
+            )
+            if user.email:
+                send_otp_code(user.email)
+            else:
+                raise serializers.ValidationError(
+                    'У пользователя отсутствует email для отправки OTP-кода.'
+                )
+            return user
+        except IntegrityError:
+            if User.objects.filter(email=email, username=username).exists():
+                raise serializers.ValidationError(
+                    {
+                        'email': ['Введённый email уже занят.'],
+                        'username': ['Введённый username уже занят.']
+                    }
+                )
+            if User.objects.filter(username=username).exists():
+                if User.objects.filter(email=email).exclude(username=username).exists():
+                    raise serializers.ValidationError(
+                        {
+                            'email': ['Введённый email уже занят другим пользователем.'],
+                            'username': ['Введённый username уже занят другим пользователем.']
+                        }
+                    )
+                raise serializers.ValidationError({'username': ['Введённый username уже занят.']})
+            if User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({'email': ['Введённый email уже занят.']})
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get(
+            'email', instance.email
+        )
+        instance.first_name = validated_data.get(
+            'first_name', instance.first_name
+        )
+        instance.last_name = validated_data.get(
+            'last_name', instance.last_name
+        )
+        instance.save()
+        return instance
 
 
-class NewTokenObtainPairSerializer(TokenObtainPairSerializer):
+class NewTokenObtainPairSerializer(serializers.Serializer):
     """
-    Сериализатор для получения JWT токена с помощью OTP кода.
+    Сериализатор для получения JWT access-токена с помощью OTP-кода.
     """
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields.pop('password', None)
-
     def validate(self, attrs):
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
+
         user = get_object_or_404(User, username=username)
-        if user:
-            code_obj = get_object_or_404(
-                OtpCode,
-                email=user.email,
-                expired__gt=timezone.now()
+
+        if not OtpCode.objects.filter(
+            email=user.email,
+            code=confirmation_code,
+            expired__gt=timezone.now()
+        ).exists():
+            raise serializers.ValidationError(
+                'Неверный или просроченный код подтверждения.'
             )
-            if code_obj.code != confirmation_code:
-                raise serializers.ValidationError(
-                    'Неверный код подтверждения.'
-                )
-            self.user = user
-            refresh = self.get_token(self.user)
-            data = {
-                'token': str(refresh.access_token)
-            }
-            return data
+
+        access_token = AccessToken.for_user(user)
+        return {'token': str(access_token)}

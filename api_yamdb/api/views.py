@@ -11,17 +11,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from .filters import TitleFilter
 from .mixins import MixinViewSet
 from .permissions import (IsAdminOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly)
+                          IsAuthorOrModeratorOrAdminOrReadOnly,
+                          IsAdminUser)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
                           TitleViewSerializer, TitleWriteSerializer,
-                          UserSerializer, NewTokenObtainPairSerializer)
-from .utils import send_otp_code
+                          UserSerializer, NewTokenObtainPairSerializer,
+                          AdminUserSerializer)
 
 User = get_user_model()
 
@@ -122,45 +125,30 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
     pagination_class = PageNumberPagination
+    serializer_class = AdminUserSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_serializer_class(self):
-        if self.action == 'me':
-            return AdminUserSerializer
-        if self.request.user.role == 'admin' or self.request.user.is_superuser:
-            return AdminUserSerializer
-        return UserSerializer
-
-    def get_permissions(self):
-        if self.action == 'me':
-            return [IsAuthenticated()]
-        return [CustomIsAdminUser()]
 
     @action(
         detail=False,
-        methods=['get', 'patch', 'delete'],
+        methods=['get', 'patch'],
         url_path='me',
-        url_name='me'
+        url_name='me',
+        permission_classes=[IsAuthenticated],
+        serializer_class=UserSerializer
     )
     def me(self, request, *args, **kwargs):
-        if request.method in ['PATCH']:
-            data = request.data.copy()
-            if 'role' in request.data and request.user.role != 'admin':
-                data['role'] = request.user.role
+        if request.method == 'PATCH':
             serializer = self.get_serializer(
                 request.user,
-                data=data,
-                partial=(request.method == 'PATCH')
+                data=request.data,
+                partial=True
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=request.user.role)
             return Response(serializer.data)
-        if request.method == 'DELETE':
-            return Response(
-                {'detail': 'Method "DELETE" not allowed.'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
 
 
 class SignupView(CreateAPIView):
@@ -174,20 +162,7 @@ class SignupView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            send_otp_code(user.email)
-            return Response(serializer.data, status=200)
-        else:
-            email = request.data.get('email')
-            username = request.data.get('username')
-            if email and User.objects.filter(
-                email=email,
-                username=username
-            ).exists():
-                send_otp_code(email)
-                return Response(
-                    serializer.data,
-                    status=200
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
