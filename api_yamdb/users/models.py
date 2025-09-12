@@ -1,28 +1,33 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-ROLE_CHOICES = (
-    ('user', 'User'),
-    ('moderator', 'Moderator'),
-    ('admin', 'Admin'),
-)
+from .constants import ADMIN_ROLE, MAX_ROLE_LENGTH, MODERATOR_ROLE, USER_ROLE
+from .validators import validate_username
 
 
 class CustomUser(AbstractUser):
-    password = models.CharField(
-        max_length=128,
-        blank=True,
-        null=True,
+
+    class Role(models.TextChoices):
+        ADMIN = ADMIN_ROLE, ('Admin')
+        MODERATOR = MODERATOR_ROLE, ('Moderator')
+        USER = USER_ROLE, ('User')
+
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[validate_username],
+        error_messages={
+            "unique": ("Пользователь с таким username уже существует!"),
+        },
     )
-    bio = models.CharField(
-        max_length=255,
+    bio = models.TextField(
         blank=True,
         verbose_name='Биография'
     )
     role = models.CharField(
-        max_length=128,
-        default='user',
-        choices=ROLE_CHOICES,
+        max_length=MAX_ROLE_LENGTH,
+        default=Role.USER,
+        choices=Role.choices,
         verbose_name='Роль'
     )
     email = models.EmailField(
@@ -42,11 +47,11 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_superuser
+        return self.role == ADMIN_ROLE or self.is_superuser or self.is_staff
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == MODERATOR_ROLE
 
     class Meta:
         constraints = [

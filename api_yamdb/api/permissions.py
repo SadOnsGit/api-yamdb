@@ -36,3 +36,16 @@ class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
             or getattr(user, 'is_admin', False)
             or getattr(user, 'is_superuser', False)
         )
+
+
+class IsAdminUser(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        return (
+            getattr(request.user, 'is_admin', False)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return (
+            getattr(request.user, 'is_admin', False)
+        )

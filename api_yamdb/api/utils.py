@@ -4,7 +4,7 @@ import string
 from django.core.mail import send_mail
 from django.utils import timezone
 
-from .models import OtpCode
+from users.models import OtpCode
 
 
 def send_otp_code(email: str) -> None:
