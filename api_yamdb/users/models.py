@@ -8,9 +8,9 @@ from .validators import validate_username
 class CustomUser(AbstractUser):
 
     class Role(models.TextChoices):
-        ADMIN = ADMIN_ROLE, ('Admin')
-        MODERATOR = MODERATOR_ROLE, ('Moderator')
-        USER = USER_ROLE, ('User')
+        ADMIN = ADMIN_ROLE, ("Admin")
+        MODERATOR = MODERATOR_ROLE, ("Moderator")
+        USER = USER_ROLE, ("User")
 
     username = models.CharField(
         max_length=150,
@@ -20,22 +20,18 @@ class CustomUser(AbstractUser):
             "unique": ("Пользователь с таким username уже существует!"),
         },
     )
-    bio = models.TextField(
-        blank=True,
-        verbose_name='Биография'
-    )
+    bio = models.TextField(blank=True, verbose_name="Биография")
     role = models.CharField(
         max_length=MAX_ROLE_LENGTH,
         default=Role.USER,
         choices=Role.choices,
-        verbose_name='Роль'
+        verbose_name="Роль",
     )
     email = models.EmailField(
         unique=True,
-        verbose_name='E-mail',
+        verbose_name="E-mail",
         help_text=(
-            "Обязательное поле. Введите верный email адрес, "
-            "мы отправим код на него."
+            "Обязательное поле. Введите верный email адрес, " "мы отправим код на него."
         ),
         error_messages={
             "unique": (
@@ -56,26 +52,15 @@ class CustomUser(AbstractUser):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(username__iexact='me'),
-                name='username_not_me',
-                violation_error_message="Username 'me' is not allowed."
+                check=~models.Q(username__iexact="me"),
+                name="username_not_me",
+                violation_error_message="Username 'me' is not allowed.",
             )
         ]
 
 
 class OtpCode(models.Model):
-    email = models.EmailField(
-        verbose_name='E-mail',
-        unique=True
-    )
-    code = models.CharField(
-        max_length=6,
-        verbose_name='Единоразовый код'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    expired = models.DateTimeField(
-        'Дата истечения кода'
-    )
+    email = models.EmailField(verbose_name="E-mail", unique=True)
+    code = models.CharField(max_length=6, verbose_name="Единоразовый код")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    expired = models.DateTimeField("Дата истечения кода")

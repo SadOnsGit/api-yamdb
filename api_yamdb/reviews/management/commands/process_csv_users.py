@@ -10,17 +10,12 @@ from users.models import CustomUser
 class Command(BaseCommand):
     def handle(self, *args, **options):
         with open(
-            os.path.join(
-                settings.BASE_DIR,
-                'static', 'data', 'users.csv'
-            ),
-            'r', encoding='utf-8'
+            os.path.join(settings.BASE_DIR, "static", "data", "users.csv"),
+            "r",
+            encoding="utf-8",
         ) as f:
-            csv_reader = csv.reader(f, delimiter=',')
+            csv_reader = csv.reader(f, delimiter=",")
             for row in csv_reader:
                 CustomUser.objects.create(
-                    id=int(row[0]),
-                    username=row[1],
-                    email=row[2],
-                    role=row[3]
+                    id=int(row[0]), username=row[1], email=row[2], role=row[3]
                 )

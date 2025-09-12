@@ -7,10 +7,10 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         user = request.user
         return bool(
-            user and user.is_authenticated and (
-                getattr(user, 'is_admin', False) or getattr(
-                    user, 'is_superuser', False
-                )
+            user
+            and user.is_authenticated
+            and (
+                getattr(user, "is_admin", False) or getattr(user, "is_superuser", False)
             )
         )
 
@@ -41,21 +41,17 @@ class IsAuthorAdminOrReadOnly(permissions.BasePermission):
             return True
         user = request.user
         return (
-            getattr(obj, 'author', None) == user
-            or getattr(user, 'is_moderator', False)
-            or getattr(user, 'is_admin', False)
-            or getattr(user, 'is_superuser', False)
+            getattr(obj, "author", None) == user
+            or getattr(user, "is_moderator", False)
+            or getattr(user, "is_admin", False)
+            or getattr(user, "is_superuser", False)
         )
 
 
 class IsAdminUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        return (
-            getattr(request.user, 'is_admin', False)
-        )
+        return getattr(request.user, "is_admin", False)
 
     def has_object_permission(self, request, view, obj):
-        return (
-            getattr(request.user, 'is_admin', False)
-        )
+        return getattr(request.user, "is_admin", False)

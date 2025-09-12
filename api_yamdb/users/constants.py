@@ -1,4 +1,4 @@
-ADMIN_ROLE = 'admin'
-USER_ROLE = 'user'
-MODERATOR_ROLE = 'moderator'
+ADMIN_ROLE = "admin"
+USER_ROLE = "user"
+MODERATOR_ROLE = "moderator"
 MAX_ROLE_LENGTH = 128
