@@ -236,10 +236,10 @@ class UserSerializer(serializers.Serializer):
                     raise serializers.ValidationError(
                         {
                             "email": [
-                                "Введённый email уже занят другим пользователем."
+                                "Введённый email уже занят"
                             ],
                             "username": [
-                                "Введённый username уже занят другим пользователем."
+                                "Введённый username уже занят"
                             ],
                         }
                     )

@@ -15,6 +15,6 @@ def validate_username(value):
         invalid_chars = re.sub(r"[\w.@+-]", "", value)
         invalid_chars = "".join(sorted(set(invalid_chars)))
         raise ValidationError(
-            f"Имя пользователя содержит недопустимые символы: {invalid_chars}. "
+            f"Имя содержит недопустимые символы: {invalid_chars}. "
             "Разрешены только буквы, цифры и символы @/./+/-/_."
         )
