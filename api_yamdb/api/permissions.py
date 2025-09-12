@@ -10,7 +10,8 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             user
             and user.is_authenticated
             and (
-                getattr(user, "is_admin", False) or getattr(user, "is_superuser", False)
+                getattr(user, "is_admin", False)
+                or getattr(user, "is_superuser", False)
             )
         )
 

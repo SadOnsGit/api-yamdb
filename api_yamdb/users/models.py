@@ -31,7 +31,8 @@ class CustomUser(AbstractUser):
         unique=True,
         verbose_name="E-mail",
         help_text=(
-            "Обязательное поле. Введите верный email адрес, " "мы отправим код на него."
+            "Обязательное поле. Введите верный email адрес, "
+            "мы отправим код на него."
         ),
         error_messages={
             "unique": (
@@ -62,5 +63,7 @@ class CustomUser(AbstractUser):
 class OtpCode(models.Model):
     email = models.EmailField(verbose_name="E-mail", unique=True)
     code = models.CharField(max_length=6, verbose_name="Единоразовый код")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
     expired = models.DateTimeField("Дата истечения кода")

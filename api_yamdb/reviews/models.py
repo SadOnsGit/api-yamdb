@@ -5,8 +5,6 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.forms import ValidationError
-
-from api_yamdb.settings import START_YEAR
 from reviews.constans import (
     CHAR_FIELD_MAX_LENGTH,
     MAX_SCORE,
@@ -14,6 +12,8 @@ from reviews.constans import (
     MIN_YEAR_PUB,
     SLUG_FIELD_MAX_LENGTH,
 )
+
+from api_yamdb.settings import START_YEAR
 
 User = get_user_model()
 SCORE_MIN = 1
@@ -53,7 +53,8 @@ class Title(models.Model):
         db_index=True,
         validators=[
             MinValueValidator(
-                MIN_YEAR_PUB, message=f"Год выпуска не может быть раньше {MIN_YEAR_PUB}"
+                MIN_YEAR_PUB,
+                message=f"Год выпуска не может быть раньше {MIN_YEAR_PUB}",
             ),
             validate_year,
         ],
@@ -75,7 +76,9 @@ class NameSlug(models.Model):
         max_length=CHAR_FIELD_MAX_LENGTH, verbose_name="имя", unique=True
     )
     slug = models.SlugField(
-        max_length=SLUG_FIELD_MAX_LENGTH, verbose_name="идентификатор", unique=True
+        max_length=SLUG_FIELD_MAX_LENGTH,
+        verbose_name="идентификатор",
+        unique=True,
     )
 
     class Meta:
@@ -129,13 +132,19 @@ class Review(models.Model):
     )
     score = models.PositiveSmallIntegerField(
         validators=[
-            MinValueValidator(MIN_SCORE, message="Оценка не может быть меньше 1"),
-            MaxValueValidator(MAX_SCORE, message="Оценка не может быть больше 10"),
+            MinValueValidator(
+                MIN_SCORE, message="Оценка не может быть меньше 1"
+            ),
+            MaxValueValidator(
+                MAX_SCORE, message="Оценка не может быть больше 10"
+            ),
         ],
         verbose_name="Оценка",
         help_text=f"От {SCORE_MIN} до {SCORE_MAX}",
     )
-    pub_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата публикации")
+    pub_date = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата публикации"
+    )
 
     class Meta:
         verbose_name = "Отзыв"
@@ -160,7 +169,10 @@ class Comment(models.Model):
     """
 
     review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name="comments", verbose_name="Отзыв"
+        Review,
+        on_delete=models.CASCADE,
+        related_name="comments",
+        verbose_name="Отзыв",
     )
     author = models.ForeignKey(
         User,
@@ -171,7 +183,9 @@ class Comment(models.Model):
     text = models.TextField(
         verbose_name="Текст комментария", help_text="Введите текст комментария"
     )
-    pub_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата публикации")
+    pub_date = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата публикации"
+    )
 
     class Meta:
         verbose_name = "Комментарий"

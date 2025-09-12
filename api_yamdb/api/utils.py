@@ -3,7 +3,6 @@ import string
 
 from django.core.mail import send_mail
 from django.utils import timezone
-
 from users.models import OtpCode
 
 
@@ -15,7 +14,9 @@ def send_otp_code(email: str) -> None:
     try:
         datetime_now = timezone.datetime.now()
         expired = datetime_now + timezone.timedelta(minutes=60)
-        if OtpCode.objects.filter(email=email, expired__gt=datetime_now).exists():
+        if OtpCode.objects.filter(
+            email=email, expired__gt=datetime_now
+        ).exists():
             code = (
                 OtpCode.objects.filter(email=email, expired__gt=datetime_now)
                 .first()
@@ -26,7 +27,8 @@ def send_otp_code(email: str) -> None:
         send_mail(
             subject="Ваш код для получения токена",
             message=(
-                f"Ваш код для получения токена: {code}\n" "Он будет доступен 10 минут."
+                f"Ваш код для получения токена: {code}\n"
+                "Он будет доступен 10 минут."
             ),
             from_email="myemail@gmail.com",
             recipient_list=[email],

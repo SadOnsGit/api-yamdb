@@ -2,10 +2,9 @@
 
 import django.core.validators
 import django.db.models.deletion
+import reviews.models
 from django.conf import settings
 from django.db import migrations, models
-
-import reviews.models
 
 
 class Migration(migrations.Migration):
@@ -31,12 +30,16 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(max_length=256, unique=True, verbose_name="имя"),
+                    models.CharField(
+                        max_length=256, unique=True, verbose_name="имя"
+                    ),
                 ),
                 (
                     "slug",
                     models.SlugField(
-                        max_length=25, unique=True, verbose_name="идентификатор"
+                        max_length=25,
+                        unique=True,
+                        verbose_name="идентификатор",
                     ),
                 ),
             ],
@@ -61,12 +64,16 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(max_length=256, unique=True, verbose_name="имя"),
+                    models.CharField(
+                        max_length=256, unique=True, verbose_name="имя"
+                    ),
                 ),
                 (
                     "slug",
                     models.SlugField(
-                        max_length=25, unique=True, verbose_name="идентификатор"
+                        max_length=25,
+                        unique=True,
+                        verbose_name="идентификатор",
                     ),
                 ),
             ],
@@ -92,7 +99,8 @@ class Migration(migrations.Migration):
                 (
                     "text",
                     models.TextField(
-                        help_text="Введите текст отзыва", verbose_name="Текст отзыва"
+                        help_text="Введите текст отзыва",
+                        verbose_name="Текст отзыва",
                     ),
                 ),
                 (
@@ -219,7 +227,10 @@ class Migration(migrations.Migration):
                         to="reviews.category",
                     ),
                 ),
-                ("genre", models.ManyToManyField(db_index=True, to="reviews.genre")),
+                (
+                    "genre",
+                    models.ManyToManyField(db_index=True, to="reviews.genre"),
+                ),
             ],
             options={
                 "ordering": ("name",),

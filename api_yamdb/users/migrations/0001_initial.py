@@ -2,9 +2,8 @@
 
 import django.contrib.auth.models
 import django.utils.timezone
-from django.db import migrations, models
-
 import users.validators
+from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -36,7 +35,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "code",
-                    models.CharField(max_length=6, verbose_name="Единоразовый код"),
+                    models.CharField(
+                        max_length=6, verbose_name="Единоразовый код"
+                    ),
                 ),
                 (
                     "created_at",
@@ -44,7 +45,10 @@ class Migration(migrations.Migration):
                         auto_now_add=True, verbose_name="Дата создания"
                     ),
                 ),
-                ("expired", models.DateTimeField(verbose_name="Дата истечения кода")),
+                (
+                    "expired",
+                    models.DateTimeField(verbose_name="Дата истечения кода"),
+                ),
             ],
         ),
         migrations.CreateModel(
@@ -59,7 +63,10 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "password",
+                    models.CharField(max_length=128, verbose_name="password"),
+                ),
                 (
                     "last_login",
                     models.DateTimeField(
@@ -105,7 +112,8 @@ class Migration(migrations.Migration):
                 (
                     "date_joined",
                     models.DateTimeField(
-                        default=django.utils.timezone.now, verbose_name="date joined"
+                        default=django.utils.timezone.now,
+                        verbose_name="date joined",
                     ),
                 ),
                 (
@@ -119,7 +127,10 @@ class Migration(migrations.Migration):
                         validators=[users.validators.validate_username],
                     ),
                 ),
-                ("bio", models.TextField(blank=True, verbose_name="Биография")),
+                (
+                    "bio",
+                    models.TextField(blank=True, verbose_name="Биография"),
+                ),
                 (
                     "role",
                     models.CharField(
@@ -171,7 +182,9 @@ class Migration(migrations.Migration):
             options={
                 "constraints": [
                     models.CheckConstraint(
-                        condition=models.Q(("username__iexact", "me"), _negated=True),
+                        condition=models.Q(
+                            ("username__iexact", "me"), _negated=True
+                        ),
                         name="username_not_me",
                         violation_error_message="Username 'me' is not allowed.",
                     )

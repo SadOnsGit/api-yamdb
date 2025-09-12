@@ -4,11 +4,18 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
-
-from api_yamdb.settings import START_YEAR
-from reviews.models import Category, Comment, Genre, Review, Title, current_year
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    current_year,
+)
 from users.models import OtpCode
 from users.validators import validate_username
+
+from api_yamdb.settings import START_YEAR
 
 from .utils import send_otp_code
 
@@ -67,7 +74,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ("id", "name", "year", "rating", "description", "genre", "category")
+        fields = (
+            "id",
+            "name",
+            "year",
+            "rating",
+            "description",
+            "genre",
+            "category",
+        )
 
 
 class TitleViewSerializer(serializers.ModelSerializer):
@@ -85,7 +100,15 @@ class TitleViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ("id", "name", "year", "rating", "description", "genre", "category")
+        fields = (
+            "id",
+            "name",
+            "year",
+            "rating",
+            "description",
+            "genre",
+            "category",
+        )
         read_only_fields = (
             "id",
             "name",
@@ -140,7 +163,14 @@ class AdminUserSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        fields = ("username", "email", "first_name", "last_name", "bio", "role")
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "role",
+        )
         model = User
 
 
@@ -179,7 +209,9 @@ class UserSerializer(serializers.Serializer):
             username = validated_data.get("username")
             email = validated_data.get("email")
             user = User(username=username, email=email)
-            user, created = User.objects.get_or_create(username=username, email=email)
+            user, created = User.objects.get_or_create(
+                username=username, email=email
+            )
             if user.email:
                 send_otp_code(user.email)
             else:
@@ -196,7 +228,11 @@ class UserSerializer(serializers.Serializer):
                     }
                 )
             if User.objects.filter(username=username).exists():
-                if User.objects.filter(email=email).exclude(username=username).exists():
+                if (
+                    User.objects.filter(email=email)
+                    .exclude(username=username)
+                    .exists()
+                ):
                     raise serializers.ValidationError(
                         {
                             "email": [
@@ -217,8 +253,12 @@ class UserSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         instance.email = validated_data.get("email", instance.email)
-        instance.first_name = validated_data.get("first_name", instance.first_name)
-        instance.last_name = validated_data.get("last_name", instance.last_name)
+        instance.first_name = validated_data.get(
+            "first_name", instance.first_name
+        )
+        instance.last_name = validated_data.get(
+            "last_name", instance.last_name
+        )
         instance.save()
         return instance
 
@@ -227,7 +267,14 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "bio", "role")
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "role",
+        )
 
 
 class NewTokenObtainPairSerializer(serializers.Serializer):
@@ -245,7 +292,9 @@ class NewTokenObtainPairSerializer(serializers.Serializer):
         user = get_object_or_404(User, username=username)
 
         if not OtpCode.objects.filter(
-            email=user.email, code=confirmation_code, expired__gt=timezone.now()
+            email=user.email,
+            code=confirmation_code,
+            expired__gt=timezone.now(),
         ).exists():
             raise serializers.ValidationError(
                 "Неверный или просроченный код подтверждения."
