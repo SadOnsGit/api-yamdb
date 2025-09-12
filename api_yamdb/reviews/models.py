@@ -17,6 +17,8 @@ from reviews.constans import (
 )
 
 User = get_user_model()
+SCORE_MIN = 1
+SCORE_MAX = 10
 
 
 def current_year():
@@ -58,9 +60,7 @@ class Title(models.Model):
         max_length=256,
         blank=True,
     )
-    rating = models.IntegerField(
-        default=0,
-    )
+
 
     class Meta:
         ordering = ('name',)
@@ -111,14 +111,14 @@ class Review(models.Model):
     """
 
     title = models.ForeignKey(
-        'Title',
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Произведение',
         help_text='Связь с произведением (Title).'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор',
@@ -139,7 +139,7 @@ class Review(models.Model):
             ),
         ],
         verbose_name='Оценка',
-        help_text='От 1 до 10'
+        help_text=f'От {SCORE_MIN} до {SCORE_MAX}',
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,

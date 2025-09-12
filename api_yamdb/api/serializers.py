@@ -1,5 +1,11 @@
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.db import IntegrityError
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import serializers
-
+from users.validators import validate_username
 from reviews.models import (
     Category,
     Comment,
@@ -8,8 +14,11 @@ from reviews.models import (
     Title,
     current_year,
 )
-
 from api_yamdb.settings import START_YEAR
+from users.models import OtpCode
+from .utils import send_otp_code
+
+User = get_user_model()
 
 
 class CategoryField(serializers.SlugRelatedField):
@@ -63,7 +72,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'category'
         )
 
 
@@ -81,10 +90,10 @@ class TitleViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'rating', 'category'
         )
         read_only_fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'category'
         )
 
 
@@ -123,3 +132,132 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для админов с выбором роли
+    """
+
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+        model = User
+
+
+class UserSerializer(serializers.Serializer):
+    """
+    Сериализатор для регистрации пользователей
+    """
+    username = serializers.CharField(
+        required=True,
+        max_length=150,
+        validators=[validate_username]
+    )
+    email = serializers.CharField(
+        required=True,
+        max_length=254,
+    )
+    first_name = serializers.CharField(
+        required=False,
+        max_length=150,
+    )
+    last_name = serializers.CharField(
+        required=False,
+        max_length=150,
+    )
+    bio = serializers.CharField(
+        required=False,
+    )
+    role = serializers.CharField(
+        required=False,
+    )
+
+    def to_representation(self, instance):
+        return {
+            'username': instance.username,
+            'email': instance.email
+        }
+
+    def create(self, validated_data):
+        try:
+            username = validated_data.get('username')
+            email = validated_data.get('email')
+            user = User(username=username, email=email)
+            user, created = User.objects.get_or_create(
+                username=username,
+                email=email
+            )
+            if user.email:
+                send_otp_code(user.email)
+            else:
+                raise serializers.ValidationError(
+                    'У пользователя отсутствует email для отправки OTP-кода.'
+                )
+            return user
+        except IntegrityError:
+            if User.objects.filter(email=email, username=username).exists():
+                raise serializers.ValidationError(
+                    {
+                        'email': ['Введённый email уже занят.'],
+                        'username': ['Введённый username уже занят.']
+                    }
+                )
+            if User.objects.filter(username=username).exists():
+                if User.objects.filter(email=email).exclude(username=username).exists():
+                    raise serializers.ValidationError(
+                        {
+                            'email': ['Введённый email уже занят другим пользователем.'],
+                            'username': ['Введённый username уже занят другим пользователем.']
+                        }
+                    )
+                raise serializers.ValidationError({'username': ['Введённый username уже занят.']})
+            if User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({'email': ['Введённый email уже занят.']})
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get(
+            'email', instance.email
+        )
+        instance.first_name = validated_data.get(
+            'first_name', instance.first_name
+        )
+        instance.last_name = validated_data.get(
+            'last_name', instance.last_name
+        )
+        instance.save()
+        return instance
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+
+
+class NewTokenObtainPairSerializer(serializers.Serializer):
+    """
+    Сериализатор для получения JWT access-токена с помощью OTP-кода.
+    """
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
+
+        user = get_object_or_404(User, username=username)
+
+        if not OtpCode.objects.filter(
+            email=user.email,
+            code=confirmation_code,
+            expired__gt=timezone.now()
+        ).exists():
+            raise serializers.ValidationError(
+                'Неверный или просроченный код подтверждения.'
+            )
+
+        access_token = AccessToken.for_user(user)
+        return {'token': str(access_token)}
