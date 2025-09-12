@@ -1,21 +1,17 @@
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db import IntegrityError
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import serializers
-from users.validators import validate_username
-from reviews.models import (
-    Category,
-    Comment,
-    Genre,
-    Review,
-    Title,
-    current_year,
-)
+from rest_framework_simplejwt.tokens import AccessToken
+
 from api_yamdb.settings import START_YEAR
+from reviews.models import (Category, Comment, Genre, Review, Title,
+                            current_year)
 from users.models import OtpCode
+from users.validators import validate_username
+
 from .utils import send_otp_code
 
 User = get_user_model()
@@ -68,11 +64,16 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         slug_field='slug',
     )
+    rating = serializers.ReadOnlyField()
+
+    def to_representation(self, instance):
+        serializer = TitleViewSerializer(instance)
+        return serializer.data
 
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
 
@@ -80,6 +81,7 @@ class TitleViewSerializer(serializers.ModelSerializer):
     """Сериализатор произведений."""
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
+    rating = serializers.ReadOnlyField()
 
     def validate_year(self, year):
         """Валидация поля year."""
@@ -90,10 +92,10 @@ class TitleViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'description', 'genre', 'rating', 'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
         read_only_fields = (
-            'id', 'name', 'year', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
 
 

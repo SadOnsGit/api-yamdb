@@ -1,20 +1,14 @@
 import datetime as dt
 
-from django.forms import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.forms import ValidationError
 
 from api_yamdb.settings import START_YEAR
-
-from reviews.constans import (
-    MIN_SCORE,
-    MAX_SCORE,
-    MIN_YEAR_PUB,
-    CHAR_FIELD_MAX_LENGTH,
-    SLUG_FIELD_MAX_LENGTH,
-)
+from reviews.constans import (CHAR_FIELD_MAX_LENGTH, MAX_SCORE, MIN_SCORE,
+                              MIN_YEAR_PUB, SLUG_FIELD_MAX_LENGTH)
 
 User = get_user_model()
 SCORE_MIN = 1

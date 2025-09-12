@@ -3,8 +3,7 @@ from rest_framework import routers
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from api.views import (CategoryViewSet, CommentViewSet, GenreViewSet,
-                       ReviewViewSet, TitleViewSet, UserViewSet,
-                       SignupView)
+                       ReviewViewSet, SignupView, TitleViewSet, UserViewSet)
 
 router = routers.DefaultRouter()
 router.register(

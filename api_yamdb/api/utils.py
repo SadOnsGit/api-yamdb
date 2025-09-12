@@ -14,7 +14,7 @@ def send_otp_code(email: str) -> None:
     """
     try:
         datetime_now = timezone.datetime.now()
-        expired = datetime_now + timezone.timedelta(minutes=10)
+        expired = datetime_now + timezone.timedelta(minutes=60)
         if OtpCode.objects.filter(
             email=email,
             expired__gt=datetime_now

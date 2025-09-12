@@ -1,29 +1,29 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth import get_user_model
-from rest_framework import exceptions, filters, viewsets
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.filters import SearchFilter
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import exceptions, filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.viewsets import ModelViewSet
 
 from reviews.models import Category, Comment, Genre, Review, Title
+
 from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
-from .permissions import (IsAdminOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly,
-                          IsAdminUser)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ProfileSerializer, ReviewSerializer,
-                          TitleViewSerializer, TitleWriteSerializer,
-                          UserSerializer, NewTokenObtainPairSerializer,
-                          AdminUserSerializer)
+from .permissions import (IsAdminOrReadOnly, IsAdminUser,
+                          IsAuthorOrModeratorOrAdminOrReadOnly)
+from .serializers import (AdminUserSerializer, CategorySerializer,
+                          CommentSerializer, GenreSerializer,
+                          NewTokenObtainPairSerializer, ProfileSerializer,
+                          ReviewSerializer, TitleViewSerializer,
+                          TitleWriteSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -32,7 +32,7 @@ class ReviewViewSet(ModelViewSet):
     """Сссылка: "/api/v1/titles/<title_id>/reviews/"."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_title(self):
@@ -47,7 +47,7 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrModeratorOrAdminOrReadOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_review(self):
@@ -58,11 +58,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
     def get_queryset(self):
-        return (
-            Comment.objects.filter(review_id=self.kwargs.get("review_id"))
-            .select_related("author")
-            .order_by("pub_date")
-        )
+        return self.get_review().comments.all().order_by("pub_date")
 
     def perform_create(self, serializer):
         serializer.save(
@@ -92,6 +88,11 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.request.method in ('POST', 'PATCH'):
             return TitleWriteSerializer
         return TitleViewSerializer
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        instance.rating = Title.objects.filter(pk=instance.pk).annotate(rating=Avg('reviews__score')).values('rating').first()['rating'] or 0
+        instance.save()
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
