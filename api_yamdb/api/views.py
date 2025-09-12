@@ -21,7 +21,7 @@ from .permissions import (IsAdminOrReadOnly,
                           IsAuthorOrModeratorOrAdminOrReadOnly,
                           IsAdminUser)
 from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer,
+                          GenreSerializer, ProfileSerializer, ReviewSerializer,
                           TitleViewSerializer, TitleWriteSerializer,
                           UserSerializer, NewTokenObtainPairSerializer,
                           AdminUserSerializer)
@@ -126,6 +126,7 @@ class UserViewSet(ModelViewSet):
     lookup_field = 'username'
     pagination_class = PageNumberPagination
     serializer_class = AdminUserSerializer
+    permission_classes = (IsAdminUser,)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(
@@ -134,7 +135,7 @@ class UserViewSet(ModelViewSet):
         url_path='me',
         url_name='me',
         permission_classes=[IsAuthenticated],
-        serializer_class=UserSerializer
+        serializer_class=ProfileSerializer
     )
     def me(self, request, *args, **kwargs):
         if request.method == 'PATCH':
@@ -164,5 +165,4 @@ class SignupView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+        return Response(serializer.data, status=status.HTTP_200_OK)

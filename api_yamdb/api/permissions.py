@@ -42,6 +42,10 @@ class IsAdminUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return (
-            getattr(request.user, 'is_superuser', False)
-            or getattr(request.user, 'is_admin', False)
+            getattr(request.user, 'is_admin', False)
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return (
+            getattr(request.user, 'is_admin', False)
         )

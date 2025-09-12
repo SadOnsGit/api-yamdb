@@ -146,17 +146,25 @@ class UserSerializer(serializers.Serializer):
         max_length=254,
     )
     first_name = serializers.CharField(
+        required=False,
         max_length=150,
     )
     last_name = serializers.CharField(
+        required=False,
         max_length=150,
     )
-    bio = serializers.CharField()
-    role = serializers.CharField()
+    bio = serializers.CharField(
+        required=False,
+    )
+    role = serializers.CharField(
+        required=False,
+    )
 
-    class Meta:
-        model = User
-        fields = ('username', 'email')
+    def to_representation(self, instance):
+        return {
+            'username': instance.username,
+            'email': instance.email
+        }
 
     def create(self, validated_data):
         try:
@@ -206,6 +214,13 @@ class UserSerializer(serializers.Serializer):
         )
         instance.save()
         return instance
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
 class NewTokenObtainPairSerializer(serializers.Serializer):
