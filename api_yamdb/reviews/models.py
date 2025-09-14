@@ -3,7 +3,6 @@ import datetime as dt
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.forms import ValidationError
 from reviews.constans import (
     CHAR_FIELD_MAX_LENGTH,
     MAX_SCORE,
@@ -12,22 +11,13 @@ from reviews.constans import (
     SLUG_FIELD_MAX_LENGTH,
 )
 
-from api_yamdb.settings import START_YEAR
+from .validators import validate_year
 
 User = get_user_model()
-SCORE_MIN = 1
-SCORE_MAX = 10
 
 
 def current_year():
     return dt.datetime.today().year
-
-
-def validate_year(year):
-    """Валидация поля year."""
-    current_year = dt.datetime.today().year
-    if not (START_YEAR <= year <= current_year):
-        raise ValidationError("Год не подходит")
 
 
 class Title(models.Model):
@@ -58,8 +48,7 @@ class Title(models.Model):
             validate_year,
         ],
     )
-    description = models.CharField(
-        max_length=256,
+    description = models.TextField(
         blank=True,
     )
 
@@ -67,7 +56,7 @@ class Title(models.Model):
         ordering = ("name",)
 
     def __str__(self) -> str:
-        return self.name[:10]
+        return self.name[:50]
 
 
 class NameSlug(models.Model):
@@ -83,8 +72,6 @@ class NameSlug(models.Model):
     class Meta:
         abstract = True
         ordering = ("name",)
-        verbose_name = "имя и идентификатор"
-        verbose_name_plural = "Имена и идентификаторы"
 
     def __str__(self):
         return self.name
@@ -139,7 +126,7 @@ class Review(models.Model):
             ),
         ],
         verbose_name="Оценка",
-        help_text=f"От {SCORE_MIN} до {SCORE_MAX}",
+        help_text=f"От {MIN_SCORE} до {MAX_SCORE}",
     )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата публикации"

@@ -31,7 +31,6 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
-    ProfileSerializer,
     ReviewSerializer,
     TitleViewSerializer,
     TitleWriteSerializer,
@@ -42,7 +41,7 @@ User = get_user_model()
 
 
 class ReviewViewSet(ModelViewSet):
-    """Сссылка: "/api/v1/titles/<title_id>/reviews/"."""
+    """Ссылка: "/api/v1/titles/<title_id>/reviews/"."""
 
     serializer_class = ReviewSerializer
     permission_classes = (
@@ -90,10 +89,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    queryset = Title.objects.annotate(rating=Avg("reviews__score"))
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-
-    def get_queryset(self):
-        return Title.objects.annotate(rating=Avg("reviews__score"))
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):
@@ -152,7 +149,7 @@ class UserViewSet(ModelViewSet):
         url_path="me",
         url_name="me",
         permission_classes=[IsAuthenticated],
-        serializer_class=ProfileSerializer,
+        serializer_class=AdminUserSerializer,
     )
     def me(self, request, *args, **kwargs):
         if request.method == "PATCH":
@@ -162,9 +159,8 @@ class UserViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(role=request.user.role)
             return Response(serializer.data)
-        if request.method == "GET":
-            serializer = self.get_serializer(request.user)
-            return Response(serializer.data)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 
 class SignupView(CreateAPIView):

@@ -10,9 +10,8 @@ def validate_username(value):
     """
     if value.lower() == "me":
         raise ValidationError('Имя пользователя не может быть "me".')
-    allowed_pattern = r"^[\w.@+-]+\Z"
-    if not re.match(allowed_pattern, value):
-        invalid_chars = re.sub(r"[\w.@+-]", "", value)
+    invalid_chars = re.sub(r"[\w.@+-]", "", value)
+    if invalid_chars:
         invalid_chars = "".join(sorted(set(invalid_chars)))
         raise ValidationError(
             f"Имя содержит недопустимые символы: {invalid_chars}. "

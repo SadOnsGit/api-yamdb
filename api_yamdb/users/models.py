@@ -1,11 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from .constants import ADMIN_ROLE, MAX_ROLE_LENGTH, MODERATOR_ROLE, USER_ROLE
+from .constants import ADMIN_ROLE, MAX_ROLE_LENGTH, MODERATOR_ROLE, USER_ROLE, USERNAME_MAX_LENGTH
 from .validators import validate_username
 
 
-class CustomUser(AbstractUser):
+class NewUser(AbstractUser):
 
     class Role(models.TextChoices):
         ADMIN = ADMIN_ROLE, ("Admin")
@@ -13,7 +13,7 @@ class CustomUser(AbstractUser):
         USER = USER_ROLE, ("User")
 
     username = models.CharField(
-        max_length=150,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True,
         validators=[validate_username],
         error_messages={

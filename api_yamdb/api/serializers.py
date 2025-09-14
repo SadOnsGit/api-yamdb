@@ -2,8 +2,10 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
+from .constants import MAX_USERNAME_LENGTH
 from reviews.models import (
     Category,
     Comment,
@@ -20,18 +22,6 @@ from api_yamdb.settings import START_YEAR
 from .utils import send_otp_code
 
 User = get_user_model()
-
-
-class CategoryField(serializers.SlugRelatedField):
-
-    def to_representation(self, value):
-        return {"name": value.name, "slug": value.slug}
-
-
-class GenreField(serializers.SlugRelatedField):
-
-    def to_representation(self, value):
-        return {"name": value.name, "slug": value.slug}
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -66,9 +56,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         slug_field="slug",
     )
-    rating = serializers.ReadOnlyField()
 
     def to_representation(self, instance):
+        instance = Title.objects.annotate(rating=Avg("reviews__score")).get(id=instance.id)
         serializer = TitleViewSerializer(instance)
         return serializer.data
 
@@ -90,13 +80,9 @@ class TitleViewSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, required=True)
     category = CategorySerializer(required=True)
-    rating = serializers.ReadOnlyField()
-
-    def validate_year(self, year):
-        """Валидация поля year."""
-        if not (START_YEAR <= year <= current_year()):
-            raise serializers.ValidationError("Год не подходит")
-        return year
+    rating = serializers.ReadOnlyField(
+        default=None,
+    )
 
     class Meta:
         model = Title
@@ -180,101 +166,56 @@ class UserSerializer(serializers.Serializer):
     """
 
     username = serializers.CharField(
-        required=True, max_length=150, validators=[validate_username]
+        required=True,
+        max_length=MAX_USERNAME_LENGTH,
+        validators=[validate_username]
     )
     email = serializers.EmailField(
         required=True,
         max_length=254,
     )
-    first_name = serializers.CharField(
-        required=False,
-        max_length=150,
-    )
-    last_name = serializers.CharField(
-        required=False,
-        max_length=150,
-    )
-    bio = serializers.CharField(
-        required=False,
-    )
-    role = serializers.CharField(
-        required=False,
-    )
-
-    def to_representation(self, instance):
-        return {"username": instance.username, "email": instance.email}
 
     def create(self, validated_data):
-        try:
-            username = validated_data.get("username")
-            email = validated_data.get("email")
-            user = User(username=username, email=email)
-            user, created = User.objects.get_or_create(
-                username=username, email=email
-            )
-            if user.email:
-                send_otp_code(user.email)
-            else:
-                raise serializers.ValidationError(
-                    "У пользователя отсутствует email для отправки OTP-кода."
-                )
-            return user
-        except IntegrityError:
-            if User.objects.filter(email=email, username=username).exists():
-                raise serializers.ValidationError(
-                    {
-                        "email": ["Введённый email уже занят."],
-                        "username": ["Введённый username уже занят."],
-                    }
-                )
-            if User.objects.filter(username=username).exists():
-                if (
-                    User.objects.filter(email=email)
-                    .exclude(username=username)
-                    .exists()
-                ):
-                    raise serializers.ValidationError(
-                        {
-                            "email": [
-                                "Введённый email уже занят"
-                            ],
-                            "username": [
-                                "Введённый username уже занят"
-                            ],
-                        }
-                    )
-                raise serializers.ValidationError(
-                    {"username": ["Введённый username уже занят."]}
-                )
-            if User.objects.filter(email=email).exists():
-                raise serializers.ValidationError(
-                    {"email": ["Введённый email уже занят."]}
-                )
-
-    def update(self, instance, validated_data):
-        instance.email = validated_data.get("email", instance.email)
-        instance.first_name = validated_data.get(
-            "first_name", instance.first_name
+        username = validated_data.get("username")
+        email = validated_data.get("email")
+        user, created = User.objects.get_or_create(
+            username=username, email=email
         )
-        instance.last_name = validated_data.get(
-            "last_name", instance.last_name
+        send_otp_code(user.email)
+        return user
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        username = attrs.get('username')
+
+        user_by_username = User.objects.filter(username=username).first()
+        user_by_email = User.objects.filter(email=email).first()
+
+        if user_by_username == user_by_email:
+            return attrs
+        if user_by_username:
+            raise serializers.ValidationError({'username': ['Введённый username уже занят.']})
+
+        if user_by_email:
+            raise serializers.ValidationError({'email': ['Введённый email уже занят.']})
+
+        raise serializers.ValidationError(
+            {
+                'email': ['Введённый email уже занят другим пользователем.'],
+                'username': ['Введённый username уже занят.']
+            }
         )
-        instance.save()
-        return instance
 
-
-class ProfileSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "bio",
-            "role",
-        )
+    # def update(self, instance, validated_data):
+    #     instance.email = validated_data.get("email", instance.email)
+    #     instance.first_name = validated_data.get(
+    #         "first_name", instance.first_name
+    #     )
+    #     instance.last_name = validated_data.get(
+    #         "last_name", instance.last_name
+    #     )
+    #     instance.save()
+    #     return instance
 
 
 class NewTokenObtainPairSerializer(serializers.Serializer):
