@@ -191,7 +191,7 @@ class UserSerializer(serializers.Serializer):
 
         if (
             user_by_username == user_by_email
-        ):  # Если пользователь получившийся по юзернейм равен пользователю получившемуся по эмейл
+        ):
             return attrs
         if user_by_username and user_by_email:
             raise serializers.ValidationError(
