@@ -3,7 +3,8 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from users.models import CustomUser
+
+from users.models import NewUser
 
 
 class Command(BaseCommand):
@@ -14,7 +15,8 @@ class Command(BaseCommand):
             encoding="utf-8",
         ) as f:
             csv_reader = csv.reader(f, delimiter=",")
+            next(csv_reader, None)
             for row in csv_reader:
-                CustomUser.objects.create(
+                NewUser.objects.create(
                     id=int(row[0]), username=row[1], email=row[2], role=row[3]
                 )

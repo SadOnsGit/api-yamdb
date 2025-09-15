@@ -3,6 +3,7 @@ import datetime as dt
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
 from reviews.constans import (
     CHAR_FIELD_MAX_LENGTH,
     MAX_SCORE,

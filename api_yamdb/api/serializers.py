@@ -1,24 +1,21 @@
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
-from .constants import MAX_USERNAME_LENGTH
+
 from reviews.models import (
     Category,
     Comment,
     Genre,
     Review,
     Title,
-    current_year,
 )
 from users.models import OtpCode
 from users.validators import validate_username
 
-from api_yamdb.settings import START_YEAR
-
+from .constants import MAX_USERNAME_LENGTH
 from .utils import send_otp_code
 
 User = get_user_model()
@@ -58,7 +55,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     )
 
     def to_representation(self, instance):
-        instance = Title.objects.annotate(rating=Avg("reviews__score")).get(id=instance.id)
+        instance = Title.objects.annotate(rating=Avg("reviews__score")).get(
+            id=instance.id
+        )
         serializer = TitleViewSerializer(instance)
         return serializer.data
 
@@ -68,7 +67,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "year",
-            "rating",
             "description",
             "genre",
             "category",
@@ -168,7 +166,7 @@ class UserSerializer(serializers.Serializer):
     username = serializers.CharField(
         required=True,
         max_length=MAX_USERNAME_LENGTH,
-        validators=[validate_username]
+        validators=[validate_username],
     )
     email = serializers.EmailField(
         required=True,
@@ -185,37 +183,33 @@ class UserSerializer(serializers.Serializer):
         return user
 
     def validate(self, attrs):
-        email = attrs.get('email')
-        username = attrs.get('username')
+        email = attrs.get("email")
+        username = attrs.get("username")
 
         user_by_username = User.objects.filter(username=username).first()
         user_by_email = User.objects.filter(email=email).first()
 
-        if user_by_username == user_by_email:
+        if (
+            user_by_username == user_by_email
+        ):  # Если пользователь получившийся по юзернейм равен пользователю получившемуся по эмейл
             return attrs
+        if user_by_username and user_by_email:
+            raise serializers.ValidationError(
+                {
+                    "email": ["Введённый email уже занят"],
+                    "username": ["Введённый username уже занят"],
+                }
+            )
+
         if user_by_username:
-            raise serializers.ValidationError({'username': ['Введённый username уже занят.']})
+            raise serializers.ValidationError(
+                {"username": ["Введённый username уже занят."]}
+            )
 
         if user_by_email:
-            raise serializers.ValidationError({'email': ['Введённый email уже занят.']})
-
-        raise serializers.ValidationError(
-            {
-                'email': ['Введённый email уже занят другим пользователем.'],
-                'username': ['Введённый username уже занят.']
-            }
-        )
-
-    # def update(self, instance, validated_data):
-    #     instance.email = validated_data.get("email", instance.email)
-    #     instance.first_name = validated_data.get(
-    #         "first_name", instance.first_name
-    #     )
-    #     instance.last_name = validated_data.get(
-    #         "last_name", instance.last_name
-    #     )
-    #     instance.save()
-    #     return instance
+            raise serializers.ValidationError(
+                {"email": ["Введённый email уже занят."]}
+            )
 
 
 class NewTokenObtainPairSerializer(serializers.Serializer):

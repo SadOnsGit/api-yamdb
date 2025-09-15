@@ -3,6 +3,7 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+
 from reviews.models import Comment
 
 
@@ -13,7 +14,8 @@ class Command(BaseCommand):
             "r",
             encoding="utf-8",
         ) as f:
-            csv_reader = csv.reader(f, delimiter=";")
+            csv_reader = csv.reader(f, delimiter=",")
+            next(csv_reader, None)
             for row in csv_reader:
                 Comment.objects.create(
                     id=int(row[0]),
