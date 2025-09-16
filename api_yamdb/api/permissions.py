@@ -6,13 +6,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         user = request.user
-        return bool(
-            user.is_authenticated
-            and (
-                getattr(user, "is_admin", False)
-                or getattr(user, "is_superuser", False)
-            )
-        )
+        return bool(user.is_authenticated and getattr(user, "is_admin", False))
 
 
 class IsAuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):

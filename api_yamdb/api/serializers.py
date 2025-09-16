@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
+from .utils import send_otp_code
 from reviews.models import (
     Category,
     Comment,
@@ -12,11 +13,9 @@ from reviews.models import (
     Review,
     Title,
 )
+from users.constants import USERNAME_MAX_LENGTH
 from users.models import OtpCode
 from users.validators import validate_username
-
-from .constants import MAX_USERNAME_LENGTH
-from .utils import send_otp_code
 
 User = get_user_model()
 
@@ -165,7 +164,7 @@ class UserSerializer(serializers.Serializer):
 
     username = serializers.CharField(
         required=True,
-        max_length=MAX_USERNAME_LENGTH,
+        max_length=USERNAME_MAX_LENGTH,
         validators=[validate_username],
     )
     email = serializers.EmailField(
@@ -189,9 +188,7 @@ class UserSerializer(serializers.Serializer):
         user_by_username = User.objects.filter(username=username).first()
         user_by_email = User.objects.filter(email=email).first()
 
-        if (
-            user_by_username == user_by_email
-        ):
+        if user_by_username == user_by_email:
             return attrs
         if user_by_username and user_by_email:
             raise serializers.ValidationError(

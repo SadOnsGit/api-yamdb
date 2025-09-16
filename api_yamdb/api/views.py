@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import CreateAPIView
@@ -17,8 +17,6 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
-from reviews.models import Category, Genre, Review, Title
 
 from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
@@ -37,6 +35,7 @@ from .serializers import (
     TitleWriteSerializer,
     UserSerializer,
 )
+from reviews.models import Category, Genre, Review, Title
 
 User = get_user_model()
 
@@ -98,40 +97,19 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleWriteSerializer
         return TitleViewSerializer
 
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        instance.rating = (
-            Title.objects.filter(pk=instance.pk)
-            .annotate(rating=Avg("reviews__score"))
-            .values("rating")
-            .first()["rating"]
-            or 0
-        )
-        instance.save()
-
 
 class GenreViewSet(ListCreateDestroyViewSet):
     """Вьюсет жанров."""
 
     queryset = Genre.objects.all()
-    pagination_class = LimitOffsetPagination
     serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    permission_classes = (IsAdminOrReadOnly,)
-    search_fields = ("name",)
-    lookup_field = "slug"
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
     """Вьюсет категорий."""
 
     queryset = Category.objects.all()
-    pagination_class = LimitOffsetPagination
     serializer_class = CategorySerializer
-    filter_backends = (filters.SearchFilter,)
-    permission_classes = (IsAdminOrReadOnly,)
-    search_fields = ("name",)
-    lookup_field = "slug"
 
 
 class UserViewSet(ModelViewSet):

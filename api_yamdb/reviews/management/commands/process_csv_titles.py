@@ -15,7 +15,7 @@ class Command(BaseCommand):
             encoding="utf-8",
         ) as f:
             csv_reader = csv.reader(f, delimiter=",")
-            next(csv_reader, None)  # Пропускает первую строку (заголовок)
+            next(csv_reader, None)
             for row in csv_reader:
                 Title.objects.create(
                     id=int(row[0]),

@@ -24,11 +24,11 @@ cd api_yamdb
 Cоздать и активировать виртуальное окружение:
 
 ```
-python -m venv env
+python -m venv venv
 ```
 
 ```
-source env/Scripts/activate
+source venv/Scripts/activate
 ```
 
 Установить зависимости из файла requirements.txt:
@@ -53,6 +53,12 @@ python3 manage.py makemigrations
 python3 manage.py migrate
 ```
 
+Импортировать данные из csv
+
+```
+python3 manage.py run_all_commands
+```
+
 Запустить проект:
 
 ```
@@ -74,11 +80,11 @@ cd api_yamdb
 Cоздать и активировать виртуальное окружение:
 
 ```
-python3 -m venv env
+python3 -m venv venv
 ```
 
 ```
-source env/bin/activate
+source venv/bin/activate
 ```
 
 Установить зависимости из файла requirements.txt:
@@ -101,6 +107,12 @@ python3 manage.py makemigrations
 
 ```
 python3 manage.py migrate
+```
+
+Импортировать данные из csv
+
+```
+python3 manage.py run_all_commands
 ```
 
 Запустить проект:
